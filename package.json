@@ -1,0 +1,18 @@
+{
+  "name": "@muppet/workspace",
+  "version": "0.0.1",
+  "scripts": {
+    "commit": "czg",
+    "setup": "is-ci || husky",
+    "format": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "czg": "^1.11.1",
+    "husky": "^9.1.7",
+    "is-ci": "^4.1.0",
+    "nano-staged": "^0.8.0",
+    "typescript": "^5.8.2"
+  },
+  "packageManager": "pnpm@8.14.0+sha256.9cebf61abd83f68177b29484da72da9751390eaad46dfc3072d266bfbb1ba7bf"
+}
