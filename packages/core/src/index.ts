@@ -1,3 +1,2 @@
-export function defineConfig() {
-  return {};
-}
+export * from "./createMuppet";
+export * from "./types";

@@ -1,0 +1,20 @@
+{
+    "name": "example-mcp-sdk",
+    "version": "0.0.1",
+    "bin": "./dist/index.js",
+    "scripts": {
+        "dev": "tsx ./src/index.ts",
+        "build": "pkgroll --watch"
+    },
+    "dependencies": {
+        "@hono/node-server": "^1.13.8",
+        "@modelcontextprotocol/sdk": "^1.7.0",
+        "hono": "^4.7.4",
+        "muppet": "workspace:*"
+    },
+    "devDependencies": {
+        "pkgroll": "^2.11.2",
+        "tsx": "^4.19.3",
+        "typescript": "^5.8.2"
+    }
+}

@@ -1,5 +1,5 @@
 {
-  "name": "@muppet/validations",
+  "name": "muppet",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "pkgroll --minify"
+    "build": "pkgroll --watch"
   },
   "exports": {
     ".": {
@@ -24,8 +24,12 @@
       }
     }
   },
-  "peerDependencies": {},
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.7.0",
+    "pino": "^9.6.0"
+  },
   "devDependencies": {
+    "@standard-schema/spec": "^1.0.0",
     "pkgroll": "^2.5.1"
   }
 }
