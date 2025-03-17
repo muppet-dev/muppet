@@ -26,7 +26,11 @@
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "pino": "^9.6.0"
+    "@standard-community/standard-json": "^0.1.0",
+    "@valibot/to-json-schema": "^1.0.0-rc.0",
+    "arktype": "^2.0.4",
+    "pino": "^9.6.0",
+    "zod-to-json-schema": "^3.24.1"
   },
   "devDependencies": {
     "@standard-schema/spec": "^1.0.0",

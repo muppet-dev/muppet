@@ -2,6 +2,7 @@ import {
   InitializeRequestSchema,
   LATEST_PROTOCOL_VERSION,
   SUPPORTED_PROTOCOL_VERSIONS,
+  type ServerCapabilities,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { HandlerFn } from "../types";
 
@@ -14,6 +15,12 @@ export const initializeHandler: HandlerFn = (ctx, request, config) => {
   const validatedData = InitializeRequestSchema.parse(request);
   const requestedVersion = validatedData.params.protocolVersion;
 
+  const capabilities: ServerCapabilities = {};
+
+  if (config.tools) {
+    capabilities.tools = {};
+  }
+
   return {
     result: {
       protocolVersion: SUPPORTED_PROTOCOL_VERSIONS.includes(requestedVersion)
@@ -23,9 +30,7 @@ export const initializeHandler: HandlerFn = (ctx, request, config) => {
         name: config.name,
         version: config.version,
       },
-      capabilities: {
-        tools: {},
-      },
+      capabilities,
     },
   };
 };

@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "commit": "czg",
-    "setup": "is-ci || husky",
+    "prepare": "is-ci || husky",
     "format": "biome check --write ."
   },
   "devDependencies": {
