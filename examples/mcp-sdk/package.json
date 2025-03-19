@@ -4,13 +4,15 @@
     "bin": "./dist/index.js",
     "scripts": {
         "dev": "tsx ./src/index.ts",
-        "build": "pkgroll --watch"
+        "build": "pkgroll --minify"
     },
     "dependencies": {
         "@hono/node-server": "^1.13.8",
         "@modelcontextprotocol/sdk": "^1.7.0",
         "hono": "^4.7.4",
-        "muppet": "workspace:*"
+        "muppet": "workspace:*",
+        "pino": "^9.6.0",
+        "zod": "^3.24.2"
     },
     "devDependencies": {
         "pkgroll": "^2.11.2",

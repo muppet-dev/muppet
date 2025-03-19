@@ -41,6 +41,12 @@ importers:
       muppet:
         specifier: workspace:*
         version: link:../../packages/core
+      pino:
+        specifier: ^9.6.0
+        version: 9.6.0
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
     devDependencies:
       pkgroll:
         specifier: ^2.11.2
@@ -54,43 +60,33 @@ importers:
 
   packages/core:
     dependencies:
+      '@hono/standard-validator':
+        specifier: ^0.1.2
+        version: 0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4)
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.7.0
       '@standard-community/standard-json':
-        specifier: ^0.1.0
-        version: 0.1.0(@valibot/to-json-schema@1.0.0-rc.0)(arktype@2.1.9)(zod-to-json-schema@3.24.3)
-      '@valibot/to-json-schema':
-        specifier: ^1.0.0-rc.0
-        version: 1.0.0-rc.0(valibot@1.0.0-rc.4)
-      arktype:
-        specifier: ^2.0.4
-        version: 2.1.9
-      pino:
-        specifier: ^9.6.0
-        version: 9.6.0
-      zod-to-json-schema:
-        specifier: ^3.24.1
-        version: 3.24.3(zod@3.24.2)
-    devDependencies:
+        specifier: ^0.1.2
+        version: 0.1.2
       '@standard-schema/spec':
         specifier: ^1.0.0
         version: 1.0.0
+      '@types/json-schema':
+        specifier: ^7.0.15
+        version: 7.0.15
+      hono:
+        specifier: ^4.6.13
+        version: 4.7.4
+      pino:
+        specifier: ^9.6.0
+        version: 9.6.0
+    devDependencies:
       pkgroll:
         specifier: ^2.5.1
         version: 2.11.2(typescript@5.8.2)
 
 packages:
-
-  /@ark/schema@0.44.4:
-    resolution: {integrity: sha512-TsZTX+k5J7xsGABsFjVdRUNgViGDMLv73sikBM8JNxC4STe0suTuMNa1OJ/AFP2N+LpJ1zL9tdWlg28PRqAYhg==}
-    dependencies:
-      '@ark/util': 0.44.4
-    dev: false
-
-  /@ark/util@0.44.4:
-    resolution: {integrity: sha512-zLfNZrsq5Dq+8B0pHJwL/wD3xNBHb8FoP0FuPB455w7HpqVaqO5qPXvn+YoO8v1Y6pNwLVsM9vCIiO221LoODQ==}
-    dev: false
 
   /@biomejs/biome@1.9.4:
     resolution: {integrity: sha512-1rkd7G70+o9KkTn5KLmDYXihGoTaIGO9PIIN2ZB7UJxFrWw04CZHPYiMRjYsaDvVV7hP1dYNRLxSANLaBFGpog==}
@@ -639,6 +635,16 @@ packages:
       hono: 4.7.4
     dev: false
 
+  /@hono/standard-validator@0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4):
+    resolution: {integrity: sha512-mVyv2fpx/o0MNAEhjXhvuVbW3BWTGnf8F4w8ZifztE+TWXjUAKr7KAOZfcDhVrurgVhKw7RbTnEog2beZM6QtQ==}
+    peerDependencies:
+      '@standard-schema/spec': 1.0.0
+      hono: '>=3.9.0'
+    dependencies:
+      '@standard-schema/spec': 1.0.0
+      hono: 4.7.4
+    dev: false
+
   /@jridgewell/sourcemap-codec@1.5.0:
     resolution: {integrity: sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ==}
     dev: true
@@ -941,44 +947,36 @@ packages:
     dev: true
     optional: true
 
-  /@standard-community/standard-json@0.1.0(@valibot/to-json-schema@1.0.0-rc.0)(arktype@2.1.9)(zod-to-json-schema@3.24.3):
-    resolution: {integrity: sha512-rcKIYTJFTH6RoOpbDASE9kZ4StYUfK1J208JuZ0CQWd37pSghCh1Q0aIPA8q/mvMC7F9pAWAodZaVi7lACAUlg==}
+  /@standard-community/standard-json@0.1.2:
+    resolution: {integrity: sha512-GxrChjZ/6/9I2vjxMsG9tBqfniqBQfSgVcnWB5HPQuiv15ZEyiAI3xW2pQ0Aibe37s17ijAx2dyaXFappRvJ4g==}
     peerDependencies:
       '@valibot/to-json-schema': ^1.0.0-rc.0
-      arktype: ^2.0.4
+      effect: ^3.13.10
       zod-to-json-schema: ^3.24.1
     peerDependenciesMeta:
       '@valibot/to-json-schema':
         optional: true
-      arktype:
+      effect:
         optional: true
       zod-to-json-schema:
         optional: true
-    dependencies:
-      '@valibot/to-json-schema': 1.0.0-rc.0(valibot@1.0.0-rc.4)
-      arktype: 2.1.9
-      zod-to-json-schema: 3.24.3(zod@3.24.2)
     dev: false
 
   /@standard-schema/spec@1.0.0:
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
-    dev: true
+    dev: false
 
   /@types/estree@1.0.6:
     resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
     dev: true
 
+  /@types/json-schema@7.0.15:
+    resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
+    dev: false
+
   /@types/resolve@1.20.2:
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
     dev: true
-
-  /@valibot/to-json-schema@1.0.0-rc.0(valibot@1.0.0-rc.4):
-    resolution: {integrity: sha512-F3WDgnPzcDs9Y8qZwU9qfPnEJBQ6lCMCFjI7VsMjAza6yAixGr4cZ50gOy6zniSCk49GkFvq2a6cBKfZjTpyOw==}
-    peerDependencies:
-      valibot: ^1.0.0 || ^1.0.0-beta.5 || ^1.0.0-rc
-    dependencies:
-      valibot: 1.0.0-rc.4(typescript@5.8.2)
-    dev: false
 
   /accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -986,13 +984,6 @@ packages:
     dependencies:
       mime-types: 3.0.0
       negotiator: 1.0.0
-    dev: false
-
-  /arktype@2.1.9:
-    resolution: {integrity: sha512-bq46shcLpfop4D9acVQN/+quZ+hIGs4OUzoLq2vCaZLdkITOlWkfamBk9abMuC6fbgxW1fu/2PamcQgggWhTwQ==}
-    dependencies:
-      '@ark/schema': 0.44.4
-      '@ark/util': 0.44.4
     dev: false
 
   /astring@1.9.0:
@@ -2007,6 +1998,7 @@ packages:
     resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
     engines: {node: '>=14.17'}
     hasBin: true
+    dev: true
 
   /unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
@@ -2016,17 +2008,6 @@ packages:
   /utils-merge@1.0.1:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
-    dev: false
-
-  /valibot@1.0.0-rc.4(typescript@5.8.2):
-    resolution: {integrity: sha512-VRaChgFv7Ab0P54AMLu7+GqoexdTPQ54Plj59X9qV0AFozI3j9CGH43skg+TqgMpXnrW8jxlJ2TTHAtAD3t4qA==}
-    peerDependencies:
-      typescript: '>=5'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-    dependencies:
-      typescript: 5.8.2
     dev: false
 
   /vary@1.1.2:

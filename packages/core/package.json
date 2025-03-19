@@ -1,7 +1,8 @@
 {
   "name": "muppet",
+  "description": "OpenAPI schema generator for Hono",
   "version": "0.1.0",
-  "private": true,
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -10,30 +11,64 @@
     "dist"
   ],
   "scripts": {
-    "build": "pkgroll --watch"
+    "dev": "pkgroll --watch",
+    "build": "pkgroll --minify --clean-dist"
   },
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
-    }
+  "keywords": [
+    "hono",
+    "openapi",
+    "zod",
+    "valibot",
+    "typebox",
+    "arktype",
+    "effect"
+  ],
+  "homepage": "https://github.com/rhinobase/hono-openapi",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhinobase/hono-openapi.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/rhinobase/hono-openapi/issues"
   },
   "peerDependencies": {
+    "@hono/standard-validator": "^0.1.2",
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "@standard-community/standard-json": "^0.1.0",
-    "@valibot/to-json-schema": "^1.0.0-rc.0",
-    "arktype": "^2.0.4",
-    "pino": "^9.6.0",
-    "zod-to-json-schema": "^3.24.1"
+    "@standard-community/standard-json": "^0.1.2",
+    "@standard-schema/spec": "^1.0.0",
+    "@types/json-schema": "^7.0.15",
+    "hono": "^4.6.13",
+    "pino": "^9.6.0"
+  },
+  "peerDependenciesMeta": {
+    "@hono/standard-validator": {
+      "optional": true
+    },
+    "hono": {
+      "optional": true
+    },
+    "@standard-schema/spec": {
+      "optional": true
+    },
+    "pino": {
+      "optional": true
+    }
+  },
+  "exports": {
+    "import": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "require": {
+      "types": "./dist/index.d.cts",
+      "default": "./dist/index.cjs"
+    }
   },
   "devDependencies": {
-    "@standard-schema/spec": "^1.0.0",
     "pkgroll": "^2.5.1"
   }
 }

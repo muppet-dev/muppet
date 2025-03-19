@@ -1,13 +1,34 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { createMuppet } from "muppet";
+import { Hono } from "hono";
+import { muppet, describeRoute, validator } from "muppet";
+import z from "zod";
+import pino from "pino";
 
-const transport = new StdioServerTransport();
+const app = new Hono();
 
-createMuppet({
-  name: "mcp-sdk",
-  version: "0.0.1",
-  transport,
-  logger: {
-    path: "/Users/adityamathur/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
+app.post(
+  "/",
+  describeRoute({
+    name: "Hello World",
+    description: "A simple hello world route",
+  }),
+  validator(
+    "json",
+    z.object({
+      name: z.string(),
+    }),
+  ),
+  (c) => {
+    const payload = c.req.valid("json");
+    return c.json({ message: `Hello ${payload.name}` });
   },
-}).then((muppet) => muppet.start());
+);
+
+muppet(app, {
+  name: "My Muppet",
+  version: "1.0.0",
+  transport: new StdioServerTransport(),
+  logger: pino.destination(
+    "/Users/adityamathur/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
+  ),
+});
