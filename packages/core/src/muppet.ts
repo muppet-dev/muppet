@@ -92,25 +92,43 @@ export async function muppet<
     async (c) => {
       const { params } = c.req.valid("json");
 
+      logger?.info({ hasTools, params }, "hasTools");
+
       if (!hasTools) {
         throw new Error("No tools available");
       }
 
       for (const [path, config] of Object.entries(tools)) {
+        logger?.info({ path, config }, "Path and config");
+
         if (params.name === path || params.name === config.name) {
           const req = new Request(`http://muppet.mcp${path}`, {
-            ...c.req.raw,
+            method: "POST",
+            body: JSON.stringify(params.arguments),
+            headers: {
+              "content-type": "application/json",
+            },
           });
 
           const response = await hono.fetch(req);
 
-          return response.json();
+          const tmp = await response.json();
+
+          logger?.info({ tmp }, "Response payload");
+
+          return c.json({ result: tmp });
         }
       }
+
+      logger?.error("Tool not found");
 
       throw new Error("Tool not found");
     },
   );
+
+  mcp.post("/notifications/initialized", (c) => {
+    return c.body(null, 204);
+  });
 
   mcp.post("/ping", (c) => {
     return c.json({ result: {} });
@@ -164,6 +182,9 @@ export async function muppet<
         },
       }),
     );
+
+    // If there's no payload, we don't need to send a response. Eg. Notifications
+    if (response.status === 204) return;
 
     const payload = await response.json();
 

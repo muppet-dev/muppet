@@ -1,4 +1,4 @@
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StdioServerTransport } from "./transport";
 import { Hono } from "hono";
 import { muppet, describeRoute, validator } from "muppet";
 import z from "zod";
@@ -20,7 +20,14 @@ app.post(
   ),
   (c) => {
     const payload = c.req.valid("json");
-    return c.json({ message: `Hello ${payload.name}` });
+    return c.json({
+      content: [
+        {
+          type: "text",
+          text: `Hello ${payload.name}!`,
+        },
+      ],
+    });
   },
 );
 
