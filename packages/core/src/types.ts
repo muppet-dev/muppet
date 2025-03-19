@@ -26,5 +26,8 @@ export type MuppetConfiguration = {
   name: string;
   version: string;
   transport: Transport;
-  logger?: DestinationStream | LoggerOptions;
+  logger?: {
+    stream?: DestinationStream;
+    options?: LoggerOptions;
+  };
 };

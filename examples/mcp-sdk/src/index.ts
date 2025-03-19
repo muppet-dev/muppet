@@ -28,7 +28,9 @@ muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
   transport: new StdioServerTransport(),
-  logger: pino.destination(
-    "/Users/adityamathur/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
-  ),
+  logger: {
+    stream: pino.destination(
+      "E:/dev/muppet/muppet/examples/mcp-sdk/dist/main.log",
+    ),
+  },
 });

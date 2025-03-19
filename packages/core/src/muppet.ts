@@ -2,6 +2,7 @@ import { sValidator } from "@hono/standard-validator";
 import {
   ErrorCode,
   InitializeRequestSchema,
+  CallToolRequestSchema,
   LATEST_PROTOCOL_VERSION,
   RequestSchema,
   SUPPORTED_PROTOCOL_VERSIONS,
@@ -24,13 +25,21 @@ export async function muppet<
   let messageId = -1;
   const { transport, logger: _logger } = config;
 
-  let logger: Logger;
+  let logger: Logger | undefined;
 
   if (_logger) {
-    logger = await import("pino").then((pino) => pino.default(_logger));
+    const pino = await import("pino").then((pino) => pino.default);
+
+    if (_logger.options) {
+      logger = pino(_logger.options, _logger.stream);
+    } else if (_logger.stream) {
+      logger = pino(_logger.stream);
+    } else {
+      logger = pino();
+    }
   }
 
-  const tools = await generateSpecs(hono);
+  const tools = await generateToolSpecs(hono);
   const hasTools = Object.keys(tools).length > 0;
 
   const mcp = new Hono();
@@ -62,6 +71,10 @@ export async function muppet<
   );
 
   mcp.post("/tools/list", (c) => {
+    if (!hasTools) {
+      throw new Error("No tools available");
+    }
+
     return c.json({
       result: {
         tools: Object.entries(tools).map(([path, config]) => ({
@@ -73,12 +86,38 @@ export async function muppet<
     });
   });
 
-  mcp.post("/tools/call", (c) => {
-    return hono.fetch(c.req.raw.clone());
+  mcp.post(
+    "/tools/call",
+    sValidator("json", CallToolRequestSchema),
+    async (c) => {
+      const { params } = c.req.valid("json");
+
+      if (!hasTools) {
+        throw new Error("No tools available");
+      }
+
+      for (const [path, config] of Object.entries(tools)) {
+        if (params.name === path || params.name === config.name) {
+          const req = new Request(`http://muppet.mcp${path}`, {
+            ...c.req.raw,
+          });
+
+          const response = await hono.fetch(req);
+
+          return response.json();
+        }
+      }
+
+      throw new Error("Tool not found");
+    },
+  );
+
+  mcp.post("/ping", (c) => {
+    return c.json({ result: {} });
   });
 
   mcp.notFound((c) => {
-    logger.info("Method not found");
+    logger?.info("Method not found");
 
     return c.json({
       error: {
@@ -89,7 +128,7 @@ export async function muppet<
   });
 
   mcp.onError((err, c) => {
-    logger.error({ err }, "Internal error");
+    logger?.error({ err }, "Internal error");
 
     return c.json({
       error: {
@@ -105,11 +144,11 @@ export async function muppet<
 
   // Binding it with the transport
   transport.onclose = () => {
-    logger.info("Connection closed");
+    logger?.info("Connection closed");
   };
 
   transport.onmessage = async (message) => {
-    logger.info(
+    logger?.info(
       { message, string: JSON.stringify(message) },
       "Received message",
     );
@@ -128,24 +167,25 @@ export async function muppet<
 
     const payload = await response.json();
 
-    logger.info({ payload }, "Response payload");
+    logger?.info({ payload }, "Response payload");
 
     messageId++;
-    logger.info({ messageId });
+    logger?.info({ messageId });
 
-    transport
+    await transport
       .send({
         ...payload,
         jsonrpc: "2.0",
         id: messageId,
       })
-      .catch((error) => logger.error(error, "Failed to send cancellation"));
+      .then(() => logger?.info("Sent response"))
+      .catch((error) => logger?.error(error, "Failed to send cancellation"));
   };
 
   transport.start();
 }
 
-export async function generateSpecs<
+export async function generateToolSpecs<
   E extends Env = BlankEnv,
   S extends Schema = BlankSchema,
   P extends string = string,
