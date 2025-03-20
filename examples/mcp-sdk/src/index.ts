@@ -3,10 +3,10 @@ import { Hono } from "hono";
 import {
   muppet,
   describeTool,
-  staticResource,
-  dynamicResource,
+  // staticResource,
+  // dynamicResource,
   describePrompt,
-  validator,
+  mValidator,
 } from "muppet";
 import z from "zod";
 import pino from "pino";
@@ -15,13 +15,12 @@ const app = new Hono();
 
 // Define a simple hello world tool
 app.post(
-  "/",
+  "/hello",
   describeTool({
     name: "Hello World",
     description: "A simple hello world route",
   }),
-  validator(
-    "json",
+  mValidator(
     z.object({
       name: z.string(),
     }),
@@ -40,40 +39,39 @@ app.post(
 );
 
 // Define static resources
-app.post(
-  "/static/*",
-  staticResource({
-    name: "Static Resource",
-    description: "A static resource",
-    resource: {
-      path: "E:/dev/muppet/muppet/examples/mcp-sdk/dist/static",
-    },
-  }),
-);
+// app.post(
+//   "/static/*",
+//   staticResource({
+//     name: "Static Resource",
+//     description: "A static resource",
+//     resource: {
+//       path: "E:/dev/muppet/muppet/examples/mcp-sdk/dist/static",
+//     },
+//   }),
+// );
 
-// Define Dynamic resources
-app.post(
-  "/dynamic/*",
-  dynamicResource({
-    name: "Dynamic Resource",
-    description: "A dynamic resource",
-  }),
-  (c) => {
-    return c.json([
-      {
-        uri: "file:///logs/app.log",
-        name: "Application Logs",
-        mimeType: "text/plain",
-      },
-    ]);
-  },
-);
+// // Define Dynamic resources
+// app.post(
+//   "/dynamic/*",
+//   dynamicResource({
+//     name: "Dynamic Resource",
+//     description: "A dynamic resource",
+//   }),
+//   (c) => {
+//     return c.json([
+//       {
+//         uri: "file:///logs/app.log",
+//         name: "Application Logs",
+//         mimeType: "text/plain",
+//       },
+//     ]);
+//   },
+// );
 
 // Define a simple prompt
 app.post(
-  "/propmt",
-  validator(
-    "json",
+  "/simple",
+  mValidator(
     z.object({
       name: z.string(),
     }),
@@ -101,7 +99,7 @@ muppet(app, {
   transport: new StdioServerTransport(),
   logger: {
     stream: pino.destination(
-      "~/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
+      "/Users/adityamathur/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
     ),
   },
 });

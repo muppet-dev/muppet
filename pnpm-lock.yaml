@@ -63,6 +63,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@hono/event-emitter':
+        specifier: ^2.0.0
+        version: 2.0.0(hono@4.7.4)
       '@hono/node-server':
         specifier: ^1.13.8
         version: 1.13.8(hono@4.7.4)
@@ -631,6 +634,15 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@hono/event-emitter@2.0.0(hono@4.7.4):
+    resolution: {integrity: sha512-7/zg7hfPh9lncYCxU3avk40vGhiqP4D5NvmaNX+8QxXivIkrLckSia5P4Nz6PH+A1T8Aj3yFlONf4AiX5rqaEA==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      hono: '*'
+    dependencies:
+      hono: 4.7.4
+    dev: false
 
   /@hono/node-server@1.13.8(hono@4.7.4):
     resolution: {integrity: sha512-fsn8ucecsAXUoVxrUil0m13kOEq4mkX4/4QozCqmY+HpGfKl74OYSn8JcMA8GnG0ClfdRI4/ZSeG7zhFaVg+wg==}

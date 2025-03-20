@@ -11,7 +11,9 @@ import pino from "pino";
 // "E:/dev/muppet/muppet/examples/mcp-sdk/dist/transport.log"
 
 const logger = pino(
-  pino.destination("~/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log"),
+  pino.destination(
+    "/Users/adityamathur/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
+  ),
 );
 
 /**

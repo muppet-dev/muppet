@@ -73,6 +73,7 @@
     }
   },
   "devDependencies": {
+    "@hono/event-emitter": "^2.0.0",
     "pkgroll": "^2.5.1"
   }
 }

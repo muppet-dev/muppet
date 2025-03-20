@@ -3,6 +3,7 @@ import type { JSONSchema7 } from "json-schema";
 import type { DestinationStream, LoggerOptions } from "pino";
 import type { McpPrimitivesValue } from "./utils";
 import type { DescribeOptions } from "./describe";
+import type { Emitter } from "@hono/event-emitter";
 
 export type HasUndefined<T> = undefined extends T ? true : false;
 
@@ -14,8 +15,6 @@ export type ToolHandlerResponse = {
 };
 
 export type ServerConfiguration = {
-  name: string;
-  version: string;
   tools?: ToolsConfiguration;
   prompts?: PromptConfiguration;
 };
@@ -43,6 +42,11 @@ export type ConceptConfiguration = Record<
   | undefined
 >;
 
+export type AvailableEvents = {
+  "notifications/initialized": undefined;
+  "notifications/cancelled": undefined;
+};
+
 export type MuppetConfiguration = {
   name: string;
   version: string;
@@ -51,4 +55,5 @@ export type MuppetConfiguration = {
     stream?: DestinationStream;
     options?: LoggerOptions;
   };
+  events?: Emitter<AvailableEvents>;
 };
