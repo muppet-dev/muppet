@@ -8,7 +8,6 @@ import {
   SUPPORTED_PROTOCOL_VERSIONS,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Hono } from "hono";
-import { proxy } from "hono/proxy";
 import type { BlankEnv, BlankSchema, Env, Schema } from "hono/types";
 import type { Logger } from "pino";
 import type {
@@ -75,7 +74,7 @@ export async function muppet<
     },
   );
 
-  mcp.route("/tools", createToolsApp(serverConfiguration));
+  mcp.route("/tools", createToolsApp(serverConfiguration, hono));
 
   mcp.post("/notifications/initialized", (c) => {
     return c.body(null, 204);
@@ -242,7 +241,7 @@ export async function generateSpecs<
   return configuration;
 }
 
-function createToolsApp(config: ServerConfiguration) {
+function createToolsApp(config: ServerConfiguration, hono: Hono) {
   const app = new Hono().use(async (_c, next) => {
     if (!(McpPrimitives.TOOLS in config)) {
       throw new Error("No tools available");
@@ -264,11 +263,15 @@ function createToolsApp(config: ServerConfiguration) {
 
     const path = config.tools?.[params.name].path;
 
-    const res = await proxy(`http://muppet.mcp${path}`, {
-      ...c.req,
-    }).then((res) => res.json());
+    const res = await hono.fetch(
+      new Request(`http://muppet.mcp${path}`, {
+        ...c.req.raw,
+      }),
+    );
 
-    return c.json({ result: res });
+    const json = await res.json();
+
+    return c.json({ result: json });
   });
 
   return app;
