@@ -1,25 +1,46 @@
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { JSONSchema7 } from "json-schema";
 import type { DestinationStream, LoggerOptions } from "pino";
+import type { McpPrimitivesValue } from "./utils";
+import type { DescribeOptions } from "./describe";
 
 export type HasUndefined<T> = undefined extends T ? true : false;
 
 export type ToolHandlerResponse = {
   resolver: (
     config?: Record<string, unknown>,
-  ) => Promise<DescribeToolRouteOptions | JSONSchema7>;
+  ) => Promise<DescribeOptions | JSONSchema7>;
+  type?: McpPrimitivesValue;
 };
 
-export type DescribeToolRouteOptions = {
-  name?: string;
-  description?: string;
+export type ServerConfiguration = {
+  name: string;
+  version: string;
+  tools?: ToolsConfiguration;
+  prompts?: PromptConfiguration;
 };
 
-export type ToolConfigurationDocument = Record<
+export type ToolsConfiguration = Record<
   string,
-  DescribeToolRouteOptions & {
-    inputSchema?: JSONSchema7;
+  DescribeOptions & { inputSchema: JSONSchema7; path: string }
+>;
+
+export type PromptConfiguration = Record<
+  string,
+  DescribeOptions & {
+    arguments: { name: string; description?: string; required?: boolean }[];
+    path: string;
   }
+>;
+
+export type ConceptConfiguration = Record<
+  string,
+  | (DescribeOptions & {
+      schema?: JSONSchema7;
+      type?: McpPrimitivesValue;
+      path: string;
+    })
+  | undefined
 >;
 
 export type MuppetConfiguration = {

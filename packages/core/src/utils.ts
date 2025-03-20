@@ -7,4 +7,7 @@ export const McpPrimitives = {
   RESOURCES: "resources",
   TOOLS: "tools",
   PROMPTS: "prompts",
-};
+} as const;
+
+export type McpPrimitivesValue =
+  (typeof McpPrimitives)[keyof typeof McpPrimitives];

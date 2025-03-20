@@ -1,21 +1,24 @@
 import { sValidator } from "@hono/standard-validator";
 import {
+  CallToolRequestSchema,
   ErrorCode,
   InitializeRequestSchema,
-  CallToolRequestSchema,
   LATEST_PROTOCOL_VERSION,
   RequestSchema,
   SUPPORTED_PROTOCOL_VERSIONS,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Hono } from "hono";
+import { proxy } from "hono/proxy";
 import type { BlankEnv, BlankSchema, Env, Schema } from "hono/types";
+import type { Logger } from "pino";
 import type {
+  ConceptConfiguration,
   MuppetConfiguration,
-  ToolConfigurationDocument,
+  PromptConfiguration,
+  ServerConfiguration,
   ToolHandlerResponse,
 } from "./types";
-import { uniqueSymbol } from "./utils";
-import type { Logger } from "pino";
+import { McpPrimitives, uniqueSymbol } from "./utils";
 
 export async function muppet<
   E extends Env = BlankEnv,
@@ -39,8 +42,9 @@ export async function muppet<
     }
   }
 
-  const tools = await generateToolSpecs(hono);
-  const hasTools = Object.keys(tools).length > 0;
+  const serverConfiguration = await generateSpecs(hono, config);
+  const hasTools = McpPrimitives.TOOLS in serverConfiguration;
+  const hasPrompts = McpPrimitives.PROMPTS in serverConfiguration;
 
   const mcp = new Hono();
 
@@ -64,75 +68,20 @@ export async function muppet<
           },
           capabilities: {
             tools: hasTools ? {} : undefined,
+            prompt: hasPrompts ? {} : undefined,
           },
         },
       });
     },
   );
 
-  mcp.post("/tools/list", (c) => {
-    if (!hasTools) {
-      throw new Error("No tools available");
-    }
-
-    return c.json({
-      result: {
-        tools: Object.entries(tools).map(([path, config]) => ({
-          name: path,
-          ...config,
-          inputSchema: config.inputSchema ?? {},
-        })),
-      },
-    });
-  });
-
-  mcp.post(
-    "/tools/call",
-    sValidator("json", CallToolRequestSchema),
-    async (c) => {
-      const { params } = c.req.valid("json");
-
-      logger?.info({ hasTools, params }, "hasTools");
-
-      if (!hasTools) {
-        throw new Error("No tools available");
-      }
-
-      for (const [path, config] of Object.entries(tools)) {
-        logger?.info({ path, config }, "Path and config");
-
-        if (params.name === path || params.name === config.name) {
-          const req = new Request(`http://muppet.mcp${path}`, {
-            method: "POST",
-            body: JSON.stringify(params.arguments),
-            headers: {
-              "content-type": "application/json",
-            },
-          });
-
-          const response = await hono.fetch(req);
-
-          const tmp = await response.json();
-
-          logger?.info({ tmp }, "Response payload");
-
-          return c.json({ result: tmp });
-        }
-      }
-
-      logger?.error("Tool not found");
-
-      throw new Error("Tool not found");
-    },
-  );
+  mcp.route("/tools", createToolsApp(serverConfiguration));
 
   mcp.post("/notifications/initialized", (c) => {
     return c.body(null, 204);
   });
 
-  mcp.post("/ping", (c) => {
-    return c.json({ result: {} });
-  });
+  mcp.post("/ping", (c) => c.json({ result: {} }));
 
   mcp.notFound((c) => {
     logger?.info("Method not found");
@@ -206,26 +155,121 @@ export async function muppet<
   transport.start();
 }
 
-export async function generateToolSpecs<
+export async function generateSpecs<
   E extends Env = BlankEnv,
   S extends Schema = BlankSchema,
   P extends string = string,
->(hono: Hono<E, S, P>) {
-  const configuration: ToolConfigurationDocument = {};
+>(
+  hono: Hono<E, S, P>,
+  config: MuppetConfiguration,
+): Promise<ServerConfiguration> {
+  const configuration: ServerConfiguration = {
+    name: config.name,
+    version: config.version,
+  };
+
+  const concepts: ConceptConfiguration = {};
 
   for (const route of hono.routes) {
     if (!(uniqueSymbol in route.handler)) continue;
 
-    const { resolver } = route.handler[uniqueSymbol] as ToolHandlerResponse;
+    const { resolver, type } = route.handler[
+      uniqueSymbol
+    ] as ToolHandlerResponse;
 
     const result = await resolver();
 
-    if (result)
-      configuration[route.path] = {
-        ...(configuration[route.path] ?? {}),
-        ...result,
+    const concept = concepts[route.path];
+
+    if (concept?.type && type && concept.type !== type) {
+      throw new Error(
+        `Conflicting types for ${route.path}: ${concept.type} and ${type}`,
+      );
+    }
+
+    concepts[route.path] = {
+      ...result,
+      type,
+      path: route.path,
+    };
+  }
+
+  for (const [path, concept] of Object.entries(concepts)) {
+    if (!concept) continue;
+
+    if (!concept.type) {
+      throw new Error(`Type not found for ${path}`);
+    }
+
+    if (concept.type === McpPrimitives.TOOLS) {
+      if (!configuration.tools) {
+        configuration.tools = {};
+      }
+
+      const key = concept.name ?? path;
+
+      configuration.tools[key] = {
+        name: path,
+        ...concept,
+        inputSchema: concept.schema ?? {},
       };
+    } else if (concept.type === McpPrimitives.PROMPTS) {
+      if (!configuration.prompts) {
+        configuration.prompts = {};
+      }
+
+      const key = concept.name ?? path;
+
+      const args: PromptConfiguration[string]["arguments"] = [];
+
+      for (const arg of Object.keys(concept.schema?.properties ?? {})) {
+        args.push({
+          name: arg,
+          // @ts-expect-error
+          description: concept.schema?.properties?.[arg].description,
+          required: concept.schema?.required?.includes(arg) ?? false,
+        });
+      }
+
+      configuration.prompts[key] = {
+        name: path,
+        ...concept,
+        arguments: args,
+      };
+    }
   }
 
   return configuration;
+}
+
+function createToolsApp(config: ServerConfiguration) {
+  const app = new Hono().use(async (_c, next) => {
+    if (!(McpPrimitives.TOOLS in config)) {
+      throw new Error("No tools available");
+    }
+
+    await next();
+  });
+
+  app.post("/list", (c) => {
+    return c.json({
+      result: {
+        tools: config.tools,
+      },
+    });
+  });
+
+  app.post("/call", sValidator("json", CallToolRequestSchema), async (c) => {
+    const { params } = c.req.valid("json");
+
+    const path = config.tools?.[params.name].path;
+
+    const res = await proxy(`http://muppet.mcp${path}`, {
+      ...c.req,
+    }).then((res) => res.json());
+
+    return c.json({ result: res });
+  });
+
+  return app;
 }
