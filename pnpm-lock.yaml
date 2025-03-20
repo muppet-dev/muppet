@@ -63,6 +63,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@hono/node-server':
+        specifier: ^1.13.8
+        version: 1.13.8(hono@4.7.4)
       '@hono/standard-validator':
         specifier: ^0.1.2
         version: 0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4)

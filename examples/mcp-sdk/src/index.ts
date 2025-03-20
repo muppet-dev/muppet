@@ -1,6 +1,6 @@
 import { StdioServerTransport } from "./transport";
 import { Hono } from "hono";
-import { muppet, describeRoute, validator } from "muppet";
+import { muppet, describeTool, validator } from "muppet";
 import z from "zod";
 import pino from "pino";
 
@@ -8,7 +8,7 @@ const app = new Hono();
 
 app.post(
   "/",
-  describeRoute({
+  describeTool({
     name: "Hello World",
     description: "A simple hello world route",
   }),
@@ -31,13 +31,15 @@ app.post(
   },
 );
 
+// "E:/dev/muppet/muppet/examples/mcp-sdk/dist/main.log"
+
 muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
   transport: new StdioServerTransport(),
   logger: {
     stream: pino.destination(
-      "E:/dev/muppet/muppet/examples/mcp-sdk/dist/main.log",
+      "~/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
     ),
   },
 });

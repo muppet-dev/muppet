@@ -3,7 +3,7 @@ import { toJsonSchema } from "@standard-community/standard-json";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { Env, Input, MiddlewareHandler, ValidationTargets } from "hono";
 import type { HasUndefined } from "../types.js";
-import { uniqueSymbol } from "../utils.js";
+import { McpPrimitives, uniqueSymbol } from "../utils.js";
 
 /**
  * Generate a resolver for a Standard Schema
@@ -66,6 +66,7 @@ export function validator<
 
         return null;
       },
+      type: McpPrimitives.TOOLS,
     },
   });
 }

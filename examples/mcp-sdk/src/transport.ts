@@ -8,8 +8,10 @@ import process from "node:process";
 import type { Readable, Writable } from "node:stream";
 import pino from "pino";
 
+// "E:/dev/muppet/muppet/examples/mcp-sdk/dist/transport.log"
+
 const logger = pino(
-  pino.destination("E:/dev/muppet/muppet/examples/mcp-sdk/dist/transport.log"),
+  pino.destination("~/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log"),
 );
 
 /**

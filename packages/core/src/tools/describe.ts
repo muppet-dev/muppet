@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from "hono/types";
 import type { DescribeToolRouteOptions } from "../types.js";
-import { uniqueSymbol } from "../utils.js";
+import { McpPrimitives, uniqueSymbol } from "../utils.js";
 
 /**
  * Describe a route with OpenAPI specs.
@@ -17,6 +17,7 @@ export function describeTool(
   return Object.assign(middleware, {
     [uniqueSymbol]: {
       resolver: () => docs,
+      type: McpPrimitives.TOOLS,
     },
   });
 }

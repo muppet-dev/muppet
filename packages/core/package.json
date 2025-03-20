@@ -36,6 +36,7 @@
     "url": "https://github.com/rhinobase/hono-openapi/issues"
   },
   "peerDependencies": {
+    "@hono/node-server": "^1.13.8",
     "@hono/standard-validator": "^0.1.2",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "@standard-community/standard-json": "^0.1.2",
@@ -45,6 +46,9 @@
     "pino": "^9.6.0"
   },
   "peerDependenciesMeta": {
+    "@hono/node-server": {
+      "optional": true
+    },
     "@hono/standard-validator": {
       "optional": true
     },
