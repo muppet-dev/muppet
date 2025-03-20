@@ -80,6 +80,7 @@ export async function muppet<
 
       const hasTools = McpPrimitives.TOOLS in serverConfiguration;
       const hasPrompts = McpPrimitives.PROMPTS in serverConfiguration;
+      const hasResources = false;
 
       return c.json({
         result: {
@@ -94,7 +95,8 @@ export async function muppet<
           },
           capabilities: {
             tools: hasTools ? {} : undefined,
-            prompt: hasPrompts ? {} : undefined,
+            prompts: hasPrompts ? {} : undefined,
+            resources: hasResources ? {} : undefined,
           },
         },
       });
@@ -298,8 +300,6 @@ function createToolsApp<
 
     const path = config.tools?.[params.name].path;
 
-    c.get("logger")?.info({ path }, "Path");
-
     if (!path) {
       throw new Error("Unable to find the path for the tool!");
     }
@@ -315,8 +315,6 @@ function createToolsApp<
 
     const json = await res.json();
 
-    c.get("logger")?.info({ json }, "Response");
-
     return c.json({ result: json });
   });
 
@@ -328,7 +326,7 @@ function createPromptApp<
   S extends Schema = BlankSchema,
   P extends string = string,
 >(config: ServerConfiguration, hono: Hono<E, S, P>) {
-  const app = new Hono().use(async (_c, next) => {
+  const app = new Hono<BaseEnv>().use(async (_c, next) => {
     if (!(McpPrimitives.PROMPTS in config)) {
       throw new Error("No prompts available");
     }
@@ -346,7 +344,7 @@ function createPromptApp<
     });
   });
 
-  app.get("/get", sValidator("json", GetPromptRequestSchema), async (c) => {
+  app.post("/get", sValidator("json", GetPromptRequestSchema), async (c) => {
     const { params } = c.req.valid("json");
 
     const prompt = config.prompts?.[params.name];
@@ -366,7 +364,12 @@ function createPromptApp<
 
     const json = await res.json();
 
-    return c.json({ description: prompt.description, messages: json });
+    if (Array.isArray(json))
+      return c.json({
+        result: { description: prompt.description, messages: json },
+      });
+
+    return c.json({ result: json });
   });
 
   return app;
