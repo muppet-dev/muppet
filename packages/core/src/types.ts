@@ -1,7 +1,6 @@
 import type { Emitter } from "@hono/event-emitter";
-import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { JSONSchema7 } from "json-schema";
-import type { DestinationStream, LoggerOptions } from "pino";
+import type { Logger } from "pino";
 import type { McpPrimitivesValue } from "./utils";
 
 export type HasUndefined<T> = undefined extends T ? true : false;
@@ -93,11 +92,7 @@ export type Promisify<T> = T | Promise<T>;
 export type MuppetConfiguration = {
   name: string;
   version: string;
-  transport: Transport;
-  logger?: {
-    stream?: DestinationStream;
-    options?: LoggerOptions;
-  };
+  logger?: Logger;
   events?: Emitter<AvailableEvents>;
   resources?: Record<
     string,

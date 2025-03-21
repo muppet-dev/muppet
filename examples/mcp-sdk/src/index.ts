@@ -1,4 +1,3 @@
-import { StdioServerTransport } from "./transport";
 import { Hono } from "hono";
 import {
   muppet,
@@ -6,11 +5,19 @@ import {
   describePrompt,
   mValidator,
   registerResources,
+  bridge,
 } from "muppet";
 import z from "zod";
 import pino from "pino";
+// import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const app = new Hono();
+const logger = pino(
+  pino.destination(
+    "/Users/adityamathur/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
+  ),
+);
 
 // Define a simple hello world tool
 app.post(
@@ -84,12 +91,7 @@ app.post(
 muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
-  transport: new StdioServerTransport(),
-  logger: {
-    stream: pino.destination(
-      "/Users/adityamathur/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
-    ),
-  },
+  logger,
   resources: {
     https: () => {
       return [
@@ -116,4 +118,14 @@ muppet(app, {
       ];
     },
   },
+}).then((mcp) => {
+  if (!mcp) {
+    throw new Error("MCP not initialized");
+  }
+
+  bridge({
+    mcp,
+    transport: new StdioServerTransport(),
+    logger,
+  });
 });

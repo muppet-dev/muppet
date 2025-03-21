@@ -8,10 +8,9 @@ import {
   InitializeRequestSchema,
   LATEST_PROTOCOL_VERSION,
   ReadResourceRequestSchema,
-  RequestSchema,
   SUPPORTED_PROTOCOL_VERSIONS,
 } from "@modelcontextprotocol/sdk/types.js";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import type { BlankEnv, BlankSchema, Env, Schema } from "hono/types";
 import type { JSONSchema7 } from "json-schema";
 import type { Logger } from "pino";
@@ -25,44 +24,32 @@ import type {
   ServerConfiguration,
   ToolHandlerResponse,
 } from "./types";
-import { McpPrimitives, uniqueSymbol } from "./utils";
-
-type BaseEnv = {
-  Variables: {
-    logger?: Logger;
-  };
-};
+import { getRequestInit, McpPrimitives, uniqueSymbol } from "./utils";
 
 export async function muppet<
   E extends Env = BlankEnv,
   S extends Schema = BlankSchema,
   P extends string = string,
 >(hono: Hono<E, S, P>, config: MuppetConfiguration) {
-  let messageId = -1;
-  const { transport, logger: _logger } = config;
+  const { logger } = config;
 
-  let logger: Logger | undefined;
-
-  if (_logger) {
-    const pino = await import("pino").then((pino) => pino.default);
-
-    if (_logger.options) {
-      logger = pino(_logger.options, _logger.stream);
-    } else if (_logger.stream) {
-      logger = pino(_logger.stream);
-    } else {
-      logger = pino();
-    }
-  }
-
-  let serverConfiguration: ServerConfiguration;
+  let specs: ServerConfiguration;
 
   try {
-    serverConfiguration = await generateSpecs(hono);
+    specs = await generateSpecs(hono);
   } catch (err) {
     logger?.error({ err }, "Failed to generate server configuration");
     return;
   }
+
+  type BaseEnv = {
+    Variables: {
+      logger?: Logger;
+      muppet: MuppetConfiguration;
+      specs: ServerConfiguration;
+      app: Hono<E, S, P>;
+    };
+  };
 
   const mcp = new Hono<BaseEnv>().use(async (c, next) => {
     logger?.info(
@@ -71,22 +58,28 @@ export async function muppet<
     );
 
     c.set("logger", logger);
+    c.set("muppet", config);
+    c.set("specs", specs);
+    c.set("app", hono);
 
     await next();
 
     logger?.info({ status: c.res.status }, "Outgoing response");
   });
 
+  // Init request
   mcp.post(
     "/initialize",
     sValidator("json", InitializeRequestSchema),
     async (c) => {
-      messageId = -1;
       const { params } = c.req.valid("json");
 
-      const hasTools = McpPrimitives.TOOLS in serverConfiguration;
-      const hasPrompts = McpPrimitives.PROMPTS in serverConfiguration;
-      const hasResources = McpPrimitives.RESOURCES in serverConfiguration;
+      const { name, version } = c.get("muppet");
+      const specs = c.get("specs");
+
+      const hasTools = McpPrimitives.TOOLS in specs;
+      const hasPrompts = McpPrimitives.PROMPTS in specs;
+      const hasResources = McpPrimitives.RESOURCES in specs;
 
       return c.json({
         result: {
@@ -96,8 +89,8 @@ export async function muppet<
             ? params.protocolVersion
             : LATEST_PROTOCOL_VERSION,
           serverInfo: {
-            name: config.name,
-            version: config.version,
+            name,
+            version,
           },
           capabilities: {
             tools: hasTools ? {} : undefined,
@@ -109,12 +102,8 @@ export async function muppet<
     },
   );
 
-  mcp.route("/tools", createToolsApp(serverConfiguration, hono));
-  mcp.route("/prompts", createPromptApp(serverConfiguration, hono));
-  mcp.route("/resources", createResourceApp(config, serverConfiguration, hono));
-
   mcp.post("/notifications/:event", (c) => {
-    config.events?.emit(
+    c.get("muppet").events?.emit(
       c,
       `notifications/${c.req.param("event")}` as keyof AvailableEvents,
       undefined,
@@ -125,8 +114,194 @@ export async function muppet<
 
   mcp.post("/ping", (c) => c.json({ result: {} }));
 
+  const toolsRouter = new Hono<BaseEnv>().use(async (c, next) => {
+    if (!(McpPrimitives.TOOLS in c.get("specs"))) {
+      throw new Error("No tools available");
+    }
+
+    await next();
+  });
+
+  toolsRouter.post("/list", (c) =>
+    c.json({
+      result: {
+        tools: Object.values(c.get("specs").tools ?? {}).map(
+          ({ path, ...tool }) => tool,
+        ),
+      },
+    }),
+  );
+
+  toolsRouter.post(
+    "/call",
+    sValidator("json", CallToolRequestSchema),
+    async (c) => {
+      const { params } = c.req.valid("json");
+
+      const path = c.get("specs").tools?.[params.name].path;
+
+      if (!path) {
+        throw new Error("Unable to find the path for the tool!");
+      }
+
+      const res = await c
+        .get("app")
+        .request(path, getRequestInit({ message: params.arguments, c }));
+
+      const json = await res.json();
+
+      return c.json({ result: json });
+    },
+  );
+
+  const promptsRouter = new Hono<BaseEnv>().use(async (c, next) => {
+    if (!(McpPrimitives.PROMPTS in c.get("specs"))) {
+      throw new Error("No prompts available");
+    }
+
+    await next();
+  });
+
+  promptsRouter.post("/list", (c) => {
+    return c.json({
+      result: {
+        prompts: Object.values(c.get("specs").prompts ?? {}).map(
+          ({ path, ...prompt }) => prompt,
+        ),
+      },
+    });
+  });
+
+  promptsRouter.post(
+    "/get",
+    sValidator("json", GetPromptRequestSchema),
+    async (c) => {
+      const { params } = c.req.valid("json");
+
+      const prompt = c.get("specs").prompts?.[params.name];
+
+      if (!prompt) {
+        throw new Error("Unable to find the path for the tool!");
+      }
+
+      const res = await c
+        .get("app")
+        .request(prompt.path, getRequestInit({ message: params.arguments, c }));
+
+      const json = await res.json();
+
+      if (Array.isArray(json))
+        return c.json({
+          result: { description: prompt.description, messages: json },
+        });
+
+      return c.json({ result: json });
+    },
+  );
+
+  const resourcesRouter = new Hono<BaseEnv>().use(async (c, next) => {
+    if (!(McpPrimitives.RESOURCES in c.get("specs"))) {
+      throw new Error("No resources available");
+    }
+
+    await next();
+  });
+
+  async function findAllTheResources<
+    T extends McpResource | McpResourceTemplate,
+  >(c: Context<BaseEnv>, mapFn: (resource: Resource) => T | undefined) {
+    const responses = await Promise.all(
+      Object.values(c.get("specs").resources ?? {}).map(async ({ path }) => {
+        const res = await c.get("app").request(path, getRequestInit({ c }));
+
+        return res.json() as Promise<Resource[]>;
+      }),
+    );
+
+    return responses
+      .flat(2)
+      .reduce((prev: McpResource[], resource: Resource) => {
+        const mapped = mapFn(resource);
+
+        // @ts-expect-error
+        if (mapped) prev.push(mapped);
+
+        return prev;
+      }, []);
+  }
+
+  resourcesRouter.post("/list", async (c) => {
+    const resources = await findAllTheResources(c, (resource) => {
+      if (resource.type !== "template") {
+        return {
+          name: resource.name,
+          description: resource.description,
+          mimeType: resource.mimeType,
+          uri: resource.uri,
+        };
+      }
+
+      return;
+    });
+
+    return c.json({
+      result: {
+        resources,
+      },
+    });
+  });
+
+  resourcesRouter.post("/templates/list", async (c) => {
+    const resources = await findAllTheResources(c, (resource) => {
+      if (resource.type === "template") {
+        return {
+          name: resource.name,
+          description: resource.description,
+          mimeType: resource.mimeType,
+          uriTemplate: resource.uri,
+        };
+      }
+
+      return;
+    });
+
+    return c.json({
+      result: {
+        resourceTemplates: resources,
+      },
+    });
+  });
+
+  resourcesRouter.post(
+    "/read",
+    sValidator("json", ReadResourceRequestSchema),
+    async (c) => {
+      const { params } = c.req.valid("json");
+
+      const protocol = params.uri.split(":")[0];
+      const handler = c.get("muppet").resources?.[protocol];
+
+      if (!handler) {
+        throw new Error(`Unable to find the handler for ${protocol} protocol!`);
+      }
+
+      const contents = handler(params.uri);
+
+      if (Array.isArray(contents))
+        return c.json({
+          result: { contents },
+        });
+
+      return c.json({ result: contents });
+    },
+  );
+
+  mcp.route("/tools", toolsRouter);
+  mcp.route("/prompts", promptsRouter);
+  mcp.route("/resources", resourcesRouter);
+
   mcp.notFound((c) => {
-    logger?.info("Method not found");
+    c.get("logger")?.info("Method not found");
 
     return c.json({
       error: {
@@ -137,7 +312,7 @@ export async function muppet<
   });
 
   mcp.onError((err, c) => {
-    logger?.error({ err }, "Internal error");
+    c.get("logger")?.error({ err }, "Internal error");
 
     return c.json({
       error: {
@@ -151,48 +326,7 @@ export async function muppet<
     });
   });
 
-  // Binding it with the transport
-  transport.onclose = () => {
-    logger?.info("Connection closed");
-  };
-
-  transport.onmessage = async (message) => {
-    logger?.info(
-      { message, string: JSON.stringify(message) },
-      "Received message",
-    );
-
-    const validatedMessage = RequestSchema.parse(message);
-
-    const response = await mcp.request(validatedMessage.method, {
-      method: "POST",
-      body: JSON.stringify(message),
-      headers: {
-        "content-type": "application/json",
-      },
-    });
-
-    // If there's no payload, we don't need to send a response. Eg. Notifications
-    if (response.status === 204) return;
-
-    const payload = await response.json();
-
-    logger?.info({ payload }, "Response payload");
-
-    messageId++;
-    logger?.info({ messageId });
-
-    await transport
-      .send({
-        ...payload,
-        jsonrpc: "2.0",
-        id: messageId,
-      })
-      .then(() => logger?.info("Sent response"))
-      .catch((error) => logger?.error(error, "Failed to send cancellation"));
-  };
-
-  transport.start();
+  return mcp;
 }
 
 export async function generateSpecs<
@@ -200,8 +334,6 @@ export async function generateSpecs<
   S extends Schema = BlankSchema,
   P extends string = string,
 >(hono: Hono<E, S, P>) {
-  const configuration: ServerConfiguration = {};
-
   const concepts: ConceptConfiguration = {};
 
   for (const route of hono.routes) {
@@ -235,6 +367,7 @@ export async function generateSpecs<
     };
   }
 
+  const configuration: ServerConfiguration = {};
   for (const [path, concept] of Object.entries(concepts)) {
     if (!concept) continue;
 
@@ -291,227 +424,4 @@ export async function generateSpecs<
   }
 
   return configuration;
-}
-
-function createToolsApp<
-  E extends Env = BlankEnv,
-  S extends Schema = BlankSchema,
-  P extends string = string,
->(config: ServerConfiguration, hono: Hono<E, S, P>) {
-  const app = new Hono<BaseEnv>().use(async (_c, next) => {
-    if (!(McpPrimitives.TOOLS in config)) {
-      throw new Error("No tools available");
-    }
-
-    await next();
-  });
-
-  app.post("/list", (c) =>
-    c.json({
-      result: {
-        tools: Object.values(config.tools ?? {}).map(
-          ({ path, ...tool }) => tool,
-        ),
-      },
-    }),
-  );
-
-  app.post("/call", sValidator("json", CallToolRequestSchema), async (c) => {
-    const { params } = c.req.valid("json");
-
-    const path = config.tools?.[params.name].path;
-
-    if (!path) {
-      throw new Error("Unable to find the path for the tool!");
-    }
-
-    const res = await hono.request(path, {
-      method: "POST",
-      body: JSON.stringify(params.arguments),
-      headers: {
-        ...c.req.header(),
-        "content-type": "application/json",
-      },
-    });
-
-    const json = await res.json();
-
-    return c.json({ result: json });
-  });
-
-  return app;
-}
-
-function createPromptApp<
-  E extends Env = BlankEnv,
-  S extends Schema = BlankSchema,
-  P extends string = string,
->(config: ServerConfiguration, hono: Hono<E, S, P>) {
-  const app = new Hono<BaseEnv>().use(async (_c, next) => {
-    if (!(McpPrimitives.PROMPTS in config)) {
-      throw new Error("No prompts available");
-    }
-
-    await next();
-  });
-
-  app.post("/list", (c) => {
-    return c.json({
-      result: {
-        prompts: Object.values(config.prompts ?? {}).map(
-          ({ path, ...prompt }) => prompt,
-        ),
-      },
-    });
-  });
-
-  app.post("/get", sValidator("json", GetPromptRequestSchema), async (c) => {
-    const { params } = c.req.valid("json");
-
-    const prompt = config.prompts?.[params.name];
-
-    if (!prompt) {
-      throw new Error("Unable to find the path for the tool!");
-    }
-
-    const res = await hono.request(prompt.path, {
-      method: "POST",
-      body: JSON.stringify(params.arguments),
-      headers: {
-        ...c.req.header(),
-        "content-type": "application/json",
-      },
-    });
-
-    const json = await res.json();
-
-    if (Array.isArray(json))
-      return c.json({
-        result: { description: prompt.description, messages: json },
-      });
-
-    return c.json({ result: json });
-  });
-
-  return app;
-}
-
-function createResourceApp<
-  E extends Env = BlankEnv,
-  S extends Schema = BlankSchema,
-  P extends string = string,
->(
-  muppet: MuppetConfiguration,
-  config: ServerConfiguration,
-  hono: Hono<E, S, P>,
-) {
-  const app = new Hono<BaseEnv>().use(async (_c, next) => {
-    if (!(McpPrimitives.RESOURCES in config)) {
-      throw new Error("No resources available");
-    }
-
-    await next();
-  });
-
-  app.post("/list", async (c) => {
-    const responses = await Promise.all(
-      Object.values(config.resources ?? {}).map(async ({ path }) => {
-        const res = await hono.request(path, {
-          method: "POST",
-          headers: c.req.header(),
-        });
-
-        return res.json() as Promise<Resource[]>;
-      }),
-    );
-
-    const resources = responses
-      .flat(2)
-      .reduce((prev: McpResource[], resource: Resource) => {
-        const schema = {
-          name: resource.name,
-          description: resource.description,
-          mimeType: resource.mimeType,
-        };
-
-        if (resource.type !== "template") {
-          prev.push({
-            ...schema,
-            uri: resource.uri,
-          });
-        }
-
-        return prev;
-      }, []);
-
-    return c.json({
-      result: {
-        resources,
-      },
-    });
-  });
-
-  app.post("/templates/list", async (c) => {
-    const responses = await Promise.all(
-      Object.values(config.resources ?? {}).map(async ({ path }) => {
-        const res = await hono.request(path, {
-          method: "POST",
-          headers: c.req.header(),
-        });
-
-        return res.json() as Promise<Resource[]>;
-      }),
-    );
-
-    const resources = responses
-      .flat(2)
-      .reduce((prev: McpResourceTemplate[], resource: Resource) => {
-        const schema = {
-          name: resource.name,
-          description: resource.description,
-          mimeType: resource.mimeType,
-        };
-
-        if (resource.type === "template") {
-          prev.push({
-            ...schema,
-            uriTemplate: resource.uri,
-          });
-        }
-
-        return prev;
-      }, []);
-
-    return c.json({
-      result: {
-        resourceTemplates: resources,
-      },
-    });
-  });
-
-  app.post(
-    "/read",
-    sValidator("json", ReadResourceRequestSchema),
-    async (c) => {
-      const { params } = c.req.valid("json");
-
-      const protocol = params.uri.split(":")[0];
-      const handler = muppet.resources?.[protocol];
-
-      if (!handler) {
-        throw new Error(`Unable to find the handler for ${protocol} protocol!`);
-      }
-
-      const contents = handler(params.uri);
-
-      if (Array.isArray(contents))
-        return c.json({
-          result: { contents },
-        });
-
-      return c.json({ result: contents });
-    },
-  );
-
-  return app;
 }

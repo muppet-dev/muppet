@@ -42,8 +42,7 @@
     "@standard-community/standard-json": "^0.1.2",
     "@standard-schema/spec": "^1.0.0",
     "@types/json-schema": "^7.0.15",
-    "hono": "^4.6.13",
-    "pino": "^9.6.0"
+    "hono": "^4.6.13"
   },
   "peerDependenciesMeta": {
     "@hono/node-server": {
@@ -56,9 +55,6 @@
       "optional": true
     },
     "@standard-schema/spec": {
-      "optional": true
-    },
-    "pino": {
       "optional": true
     }
   },
@@ -74,6 +70,7 @@
   },
   "devDependencies": {
     "@hono/event-emitter": "^2.0.0",
+    "pino": "^9.6.0",
     "pkgroll": "^2.5.1"
   }
 }
