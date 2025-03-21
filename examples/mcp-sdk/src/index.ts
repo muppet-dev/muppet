@@ -9,8 +9,9 @@ import {
 } from "muppet";
 import z from "zod";
 import pino from "pino";
-// import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import express from "express";
+// import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const app = new Hono();
 const logger = pino(
@@ -88,7 +89,7 @@ app.post(
 
 // "E:/dev/muppet/muppet/examples/mcp-sdk/dist/main.log"
 
-muppet(app, {
+const mcpServer = muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
   logger,
@@ -118,14 +119,56 @@ muppet(app, {
       ];
     },
   },
-}).then((mcp) => {
+});
+
+/**
+ * For Stdio transport
+ */
+// mcpServer.then((mcp) => {
+//   if (!mcp) {
+//     throw new Error("MCP not initialized");
+//   }
+
+//   bridge({
+//     mcp,
+//     transport: new StdioServerTransport(),
+//     logger,
+//   });
+// });
+
+/**
+ * For SSE transport
+ */
+let transport: SSEServerTransport | null = null;
+
+const server = express().use((req, res, next) => {
+  console.log("Request received", req.url);
+
+  next();
+});
+
+server.get("/", async (req, res) => {
+  transport = new SSEServerTransport("/messages", res);
+
+  const mcp = await mcpServer;
+
   if (!mcp) {
     throw new Error("MCP not initialized");
   }
 
   bridge({
     mcp,
-    transport: new StdioServerTransport(),
+    transport,
     logger,
   });
+});
+
+server.post("/messages", (req, res) => {
+  if (transport) {
+    transport.handlePostMessage(req, res);
+  }
+});
+
+server.listen(3001, () => {
+  console.log("Server started on port 3001");
 });

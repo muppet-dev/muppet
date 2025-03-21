@@ -31,7 +31,7 @@ export type BridgeOptions<
  * Bridge aka Bifrost, the connection between the app and the transport
  * @param options
  */
-export async function bridge(options: BridgeOptions) {
+export function bridge(options: BridgeOptions) {
   const { mcp: app, transport, logger } = options;
 
   let messageId = 0;
@@ -102,7 +102,7 @@ export async function handleMessage(options: HandleMessageOptions) {
   // If there's no payload, we don't need to send a response. Eg. Notifications
   if (response.status === 204) return null;
 
-  const payload = await response.json();
+  const payload = (await response.json()) as JSONRPCMessage;
 
   logger?.info({ payload }, "Response payload");
 
