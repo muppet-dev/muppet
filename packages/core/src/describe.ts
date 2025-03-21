@@ -1,14 +1,10 @@
 import type { MiddlewareHandler } from "hono/types";
+import type { DescribeOptions } from "./types.js";
 import {
   McpPrimitives,
-  uniqueSymbol,
   type McpPrimitivesValue,
+  uniqueSymbol,
 } from "./utils.js";
-
-export type DescribeOptions = {
-  name?: string;
-  description?: string;
-};
 
 function describeRoute(type: McpPrimitivesValue) {
   return (docs: DescribeOptions = {}): MiddlewareHandler => {
@@ -18,7 +14,7 @@ function describeRoute(type: McpPrimitivesValue) {
 
     return Object.assign(middleware, {
       [uniqueSymbol]: {
-        resolver: () => docs,
+        resolver: docs,
         type,
       },
     });
@@ -26,5 +22,4 @@ function describeRoute(type: McpPrimitivesValue) {
 }
 
 export const describePrompt = describeRoute(McpPrimitives.PROMPTS);
-export const describeResource = describeRoute(McpPrimitives.RESOURCES);
 export const describeTool = describeRoute(McpPrimitives.TOOLS);

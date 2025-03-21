@@ -5,15 +5,18 @@ import {
   GetPromptRequestSchema,
   InitializeRequestSchema,
   LATEST_PROTOCOL_VERSION,
+  ReadResourceRequestSchema,
   RequestSchema,
   SUPPORTED_PROTOCOL_VERSIONS,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Hono } from "hono";
 import type { BlankEnv, BlankSchema, Env, Schema } from "hono/types";
+import type { JSONSchema7 } from "json-schema";
 import type { Logger } from "pino";
 import type {
   AvailableEvents,
   ConceptConfiguration,
+  DescribeOptions,
   MuppetConfiguration,
   PromptConfiguration,
   ServerConfiguration,
@@ -80,7 +83,7 @@ export async function muppet<
 
       const hasTools = McpPrimitives.TOOLS in serverConfiguration;
       const hasPrompts = McpPrimitives.PROMPTS in serverConfiguration;
-      const hasResources = false;
+      const hasResources = McpPrimitives.RESOURCES in serverConfiguration;
 
       return c.json({
         result: {
@@ -105,6 +108,7 @@ export async function muppet<
 
   mcp.route("/tools", createToolsApp(serverConfiguration, hono));
   mcp.route("/prompts", createPromptApp(serverConfiguration, hono));
+  mcp.route("/resources", createResourceApp(config, serverConfiguration, hono));
 
   mcp.post("/notifications/:event", (c) => {
     config.events?.emit(
@@ -204,7 +208,13 @@ export async function generateSpecs<
       uniqueSymbol
     ] as ToolHandlerResponse;
 
-    const result = await resolver();
+    let result: DescribeOptions | JSONSchema7;
+
+    if (typeof resolver === "function") {
+      result = await resolver();
+    } else {
+      result = resolver ?? {};
+    }
 
     const concept = concepts[route.path];
 
@@ -266,6 +276,10 @@ export async function generateSpecs<
         arguments: args,
         path,
       };
+    } else if (concept.type === McpPrimitives.RESOURCES) {
+      if (!configuration.resources) {
+        configuration.resources = {};
+      }
     }
   }
 
@@ -371,6 +385,69 @@ function createPromptApp<
 
     return c.json({ result: json });
   });
+
+  return app;
+}
+
+function createResourceApp<
+  E extends Env = BlankEnv,
+  S extends Schema = BlankSchema,
+  P extends string = string,
+>(
+  muppet: MuppetConfiguration,
+  config: ServerConfiguration,
+  hono: Hono<E, S, P>,
+) {
+  const app = new Hono<BaseEnv>().use(async (_c, next) => {
+    if (!(McpPrimitives.RESOURCES in config)) {
+      throw new Error("No resources available");
+    }
+
+    await next();
+  });
+
+  app.post("/list", async (c) => {
+    const resources = await Promise.all(
+      Object.values(config.resources ?? {}).map(async ({ path }) => {
+        const res = await hono.request(path, {
+          method: "POST",
+          headers: c.req.header(),
+        });
+
+        return res.json();
+      }),
+    );
+
+    return c.json({
+      result: {
+        resources: resources.flat(),
+      },
+    });
+  });
+
+  app.post(
+    "/read",
+    sValidator("json", ReadResourceRequestSchema),
+    async (c) => {
+      const { params } = c.req.valid("json");
+
+      const protocol = params.uri.split(":")[0];
+      const handler = muppet.resources?.[protocol];
+
+      if (!handler) {
+        throw new Error(`Unable to find the handler for ${protocol} protocol!`);
+      }
+
+      const contents = handler(params.uri);
+
+      if (Array.isArray(contents))
+        return c.json({
+          result: { contents },
+        });
+
+      return c.json({ result: contents });
+    },
+  );
 
   return app;
 }

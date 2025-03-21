@@ -1,22 +1,27 @@
+import type { Emitter } from "@hono/event-emitter";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { JSONSchema7 } from "json-schema";
 import type { DestinationStream, LoggerOptions } from "pino";
 import type { McpPrimitivesValue } from "./utils";
-import type { DescribeOptions } from "./describe";
-import type { Emitter } from "@hono/event-emitter";
 
 export type HasUndefined<T> = undefined extends T ? true : false;
 
+export type DescribeOptions = {
+  name?: string;
+  description?: string;
+};
+
 export type ToolHandlerResponse = {
-  resolver: (
-    config?: Record<string, unknown>,
-  ) => Promise<DescribeOptions | JSONSchema7>;
+  resolver?:
+    | DescribeOptions
+    | ((config?: Record<string, unknown>) => Promise<JSONSchema7>);
   type?: McpPrimitivesValue;
 };
 
 export type ServerConfiguration = {
   tools?: ToolsConfiguration;
   prompts?: PromptConfiguration;
+  resources?: ResourceConfiguration;
 };
 
 export type ToolsConfiguration = Record<
@@ -28,6 +33,13 @@ export type PromptConfiguration = Record<
   string,
   DescribeOptions & {
     arguments: { name: string; description?: string; required?: boolean }[];
+    path: string;
+  }
+>;
+
+export type ResourceConfiguration = Record<
+  string,
+  {
     path: string;
   }
 >;
@@ -47,6 +59,8 @@ export type AvailableEvents = {
   "notifications/cancelled": undefined;
 };
 
+export type Promisify<T> = T | Promise<T>;
+
 export type MuppetConfiguration = {
   name: string;
   version: string;
@@ -56,4 +70,21 @@ export type MuppetConfiguration = {
     options?: LoggerOptions;
   };
   events?: Emitter<AvailableEvents>;
+  resources?: Record<
+    string,
+    (uri: string) => Promisify<
+      {
+        uri: string;
+        mimeType: string;
+        /**
+         * For text resources
+         */
+        text?: string;
+        /**
+         * For binary resources (base64 encoded)
+         */
+        blob?: string;
+      }[]
+    >
+  >;
 };

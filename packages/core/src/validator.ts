@@ -41,8 +41,8 @@ export function mValidator<
   // @ts-expect-error not typed well
   return Object.assign(middleware, {
     [uniqueSymbol]: {
-      resolver: async (options?: Record<string, unknown>) => ({
-        schema: await toJsonSchema(schema, options),
+      resolver: async () => ({
+        schema: await toJsonSchema(schema),
       }),
     },
   });
