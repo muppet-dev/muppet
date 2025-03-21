@@ -1,1 +1,1 @@
-# Muppet
+./packages/core/README.md
