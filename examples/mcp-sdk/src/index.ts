@@ -46,6 +46,12 @@ app.post(
         name: "Todo list",
         mimeType: "text/plain",
       },
+      {
+        type: "template",
+        uri: "https://lorem.{ending}",
+        name: "Todo list",
+        mimeType: "text/plain",
+      },
     ]);
   }),
 );

@@ -1,5 +1,7 @@
 import { sValidator } from "@hono/standard-validator";
 import {
+  type Resource as McpResource,
+  type ResourceTemplate as McpResourceTemplate,
   CallToolRequestSchema,
   ErrorCode,
   GetPromptRequestSchema,
@@ -281,6 +283,10 @@ export async function generateSpecs<
       if (!configuration.resources) {
         configuration.resources = {};
       }
+
+      configuration.resources[path] = {
+        path,
+      };
     }
   }
 
@@ -419,29 +425,66 @@ function createResourceApp<
       }),
     );
 
-    const resources = responses.flat(2).map((resource: Resource) => {
-      const schema = {
-        name: resource.name,
-        description: resource.description,
-        mimeType: resource.mimeType,
-      };
-
-      if (resource.type === "template") {
-        return {
-          ...schema,
-          uriTemplate: resource.uri,
+    const resources = responses
+      .flat(2)
+      .reduce((prev: McpResource[], resource: Resource) => {
+        const schema = {
+          name: resource.name,
+          description: resource.description,
+          mimeType: resource.mimeType,
         };
-      }
 
-      return {
-        ...schema,
-        uri: resource.uri,
-      };
-    });
+        if (resource.type !== "template") {
+          prev.push({
+            ...schema,
+            uri: resource.uri,
+          });
+        }
+
+        return prev;
+      }, []);
 
     return c.json({
       result: {
         resources,
+      },
+    });
+  });
+
+  app.post("/templates/list", async (c) => {
+    const responses = await Promise.all(
+      Object.values(config.resources ?? {}).map(async ({ path }) => {
+        const res = await hono.request(path, {
+          method: "POST",
+          headers: c.req.header(),
+        });
+
+        return res.json() as Promise<Resource[]>;
+      }),
+    );
+
+    const resources = responses
+      .flat(2)
+      .reduce((prev: McpResourceTemplate[], resource: Resource) => {
+        const schema = {
+          name: resource.name,
+          description: resource.description,
+          mimeType: resource.mimeType,
+        };
+
+        if (resource.type === "template") {
+          prev.push({
+            ...schema,
+            uriTemplate: resource.uri,
+          });
+        }
+
+        return prev;
+      }, []);
+
+    return c.json({
+      result: {
+        resourceTemplates: resources,
       },
     });
   });
