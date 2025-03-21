@@ -91,9 +91,6 @@ importers:
 
   packages/core:
     dependencies:
-      '@hono/node-server':
-        specifier: ^1.13.8
-        version: 1.13.8(hono@4.7.4)
       '@hono/standard-validator':
         specifier: ^0.1.2
         version: 0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4)
@@ -106,9 +103,6 @@ importers:
       '@standard-schema/spec':
         specifier: ^1.0.0
         version: 1.0.0
-      '@types/json-schema':
-        specifier: ^7.0.15
-        version: 7.0.15
       hono:
         specifier: ^4.6.13
         version: 4.7.4
@@ -116,6 +110,9 @@ importers:
       '@hono/event-emitter':
         specifier: ^2.0.0
         version: 2.0.0(hono@4.7.4)
+      '@types/json-schema':
+        specifier: ^7.0.15
+        version: 7.0.15
       pino:
         specifier: ^9.6.0
         version: 9.6.0
@@ -854,15 +851,6 @@ packages:
       hono: 4.7.4
     dev: true
 
-  /@hono/node-server@1.13.8(hono@4.7.4):
-    resolution: {integrity: sha512-fsn8ucecsAXUoVxrUil0m13kOEq4mkX4/4QozCqmY+HpGfKl74OYSn8JcMA8GnG0ClfdRI4/ZSeG7zhFaVg+wg==}
-    engines: {node: '>=18.14.1'}
-    peerDependencies:
-      hono: ^4
-    dependencies:
-      hono: 4.7.4
-    dev: false
-
   /@hono/standard-validator@0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4):
     resolution: {integrity: sha512-mVyv2fpx/o0MNAEhjXhvuVbW3BWTGnf8F4w8ZifztE+TWXjUAKr7KAOZfcDhVrurgVhKw7RbTnEog2beZM6QtQ==}
     peerDependencies:
@@ -1595,7 +1583,7 @@ packages:
 
   /@types/json-schema@7.0.15:
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
-    dev: false
+    dev: true
 
   /@types/mdast@4.0.4:
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
