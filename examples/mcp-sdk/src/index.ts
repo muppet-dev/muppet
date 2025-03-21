@@ -3,10 +3,9 @@ import { Hono } from "hono";
 import {
   muppet,
   describeTool,
-  // staticResource,
-  // dynamicResource,
   describePrompt,
   mValidator,
+  registerResources,
 } from "muppet";
 import z from "zod";
 import pino from "pino";
@@ -38,35 +37,18 @@ app.post(
   },
 );
 
-// Define static resources
-// app.post(
-//   "/static/*",
-//   staticResource({
-//     name: "Static Resource",
-//     description: "A static resource",
-//     resource: {
-//       path: "E:/dev/muppet/muppet/examples/mcp-sdk/dist/static",
-//     },
-//   }),
-// );
-
-// // Define Dynamic resources
-// app.post(
-//   "/dynamic/*",
-//   dynamicResource({
-//     name: "Dynamic Resource",
-//     description: "A dynamic resource",
-//   }),
-//   (c) => {
-//     return c.json([
-//       {
-//         uri: "file:///logs/app.log",
-//         name: "Application Logs",
-//         mimeType: "text/plain",
-//       },
-//     ]);
-//   },
-// );
+app.post(
+  "/documents",
+  registerResources((c) => {
+    return c.json([
+      {
+        uri: "https://lorem.ipsum",
+        name: "Todo list",
+        mimeType: "text/plain",
+      },
+    ]);
+  }),
+);
 
 // Define a simple prompt
 app.post(
@@ -101,5 +83,31 @@ muppet(app, {
     stream: pino.destination(
       "/Users/adityamathur/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
     ),
+  },
+  resources: {
+    https: () => {
+      return [
+        {
+          uri: "task1",
+          text: "Task 1",
+        },
+        {
+          uri: "task2",
+          text: "Task 2",
+        },
+        {
+          uri: "task3",
+          text: "Task 3",
+        },
+        {
+          uri: "task4",
+          text: "Task 4",
+        },
+        {
+          uri: "task5",
+          text: "Task 5",
+        },
+      ];
+    },
   },
 });

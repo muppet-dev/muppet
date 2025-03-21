@@ -19,6 +19,7 @@ import type {
   DescribeOptions,
   MuppetConfiguration,
   PromptConfiguration,
+  Resource,
   ServerConfiguration,
   ToolHandlerResponse,
 } from "./types";
@@ -407,20 +408,40 @@ function createResourceApp<
   });
 
   app.post("/list", async (c) => {
-    const resources = await Promise.all(
+    const responses = await Promise.all(
       Object.values(config.resources ?? {}).map(async ({ path }) => {
         const res = await hono.request(path, {
           method: "POST",
           headers: c.req.header(),
         });
 
-        return res.json();
+        return res.json() as Promise<Resource[]>;
       }),
     );
 
+    const resources = responses.flat(2).map((resource: Resource) => {
+      const schema = {
+        name: resource.name,
+        description: resource.description,
+        mimeType: resource.mimeType,
+      };
+
+      if (resource.type === "template") {
+        return {
+          ...schema,
+          uriTemplate: resource.uri,
+        };
+      }
+
+      return {
+        ...schema,
+        uri: resource.uri,
+      };
+    });
+
     return c.json({
       result: {
-        resources: resources.flat(),
+        resources,
       },
     });
   });

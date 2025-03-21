@@ -44,6 +44,35 @@ export type ResourceConfiguration = Record<
   }
 >;
 
+export type Resource =
+  | {
+      type?: "direct";
+      uri: string;
+      name: string;
+      description?: string;
+      mimeType?: string;
+    }
+  | {
+      type: "template";
+      uri: string;
+      name: string;
+      description?: string;
+      mimeType?: string;
+    };
+
+export type ResourceResponse = {
+  uri: string;
+  mimeType?: string;
+  /**
+   * For text resources
+   */
+  text?: string;
+  /**
+   * For binary resources (base64 encoded)
+   */
+  blob?: string;
+};
+
 export type ConceptConfiguration = Record<
   string,
   | (DescribeOptions & {
@@ -72,19 +101,8 @@ export type MuppetConfiguration = {
   events?: Emitter<AvailableEvents>;
   resources?: Record<
     string,
-    (uri: string) => Promisify<
-      {
-        uri: string;
-        mimeType: string;
-        /**
-         * For text resources
-         */
-        text?: string;
-        /**
-         * For binary resources (base64 encoded)
-         */
-        blob?: string;
-      }[]
-    >
+    (
+      uri: string,
+    ) => Promisify<ResourceResponse[] | { contents: ResourceResponse[] }>
   >;
 };
