@@ -6,6 +6,9 @@ import {
   mValidator,
   registerResources,
   bridge,
+  type ToolResponseType,
+  type Resource,
+  type PromptResponseType,
 } from "muppet";
 import z from "zod";
 import pino from "pino";
@@ -34,14 +37,12 @@ app.post(
   ),
   (c) => {
     const payload = c.req.valid("json");
-    return c.json({
-      content: [
-        {
-          type: "text",
-          text: `Hello ${payload.name}!`,
-        },
-      ],
-    });
+    return c.json<ToolResponseType>([
+      {
+        type: "text",
+        text: `Hello ${payload.name}!`,
+      },
+    ]);
   },
 );
 
@@ -67,15 +68,15 @@ app.post(
 // Define a simple prompt
 app.post(
   "/simple",
+  describePrompt({ name: "Simple Prompt" }),
   mValidator(
     z.object({
       name: z.string(),
     }),
   ),
-  describePrompt({ name: "Simple Prompt" }),
   (c) => {
     const { name } = c.req.valid("json");
-    return c.json([
+    return c.json<PromptResponseType>([
       {
         role: "user",
         content: {

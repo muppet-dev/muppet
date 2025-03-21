@@ -3,8 +3,49 @@ title: Introduction
 description: Get started with muppet
 ---
 
+import { CardGrid, LinkCard, Code } from "@astrojs/starlight/components"
+
 ![muppet banner](../../assets/banner.png)
 
 Muppet is an open toolkit which standardizes the way you build, test, and deploy your MCPs. If MCP is the USB-C port for AI applications, think of Muppet as the assembly line that produces the USB-C port.
 
 ## Why Muppet?
+
+Muppet is not a lib, it more of a collection of tools which you can use with [honojs](https://hono.dev/). Instead of reinventing the wheel, Muppet integrates with your hono app, and it just feels like a natural extension of your project.
+
+The beauti about Muppet is not just the tools but the fact that you can use honojs with it. This means you can use all the features and capabilities of honojs with Muppet. Eg - Auth, CORS, Payments, Rate Limiting, etc.
+
+This might not feel like a big deal, if you have a small and simple MCP, but as your project grows, you will start to appreciate the power of Muppet.
+
+It's inspired by the [hono-openapi](https://www.npmjs.com/package/hono-openapi) package, so if you have used it before, you will find Muppet very familiar.
+
+## Get started
+
+Choose the path that best fits your needs:
+
+#### Quick Starts
+<CardGrid>
+  <LinkCard title="For Server Developers" href="/quickstart/server" description="Expose data and content from your servers to LLMs" />
+  <LinkCard title="For Users" href="/quickstart/user" description="Create reusable prompt templates and workflows"/>
+</CardGrid>
+
+## Capabilities
+
+Checkout how you can implement some of the common capabilities with Muppet:
+
+<CardGrid>
+  <LinkCard title="Resources" href="/concepts/resources" description="Expose data and content from your servers to LLMs" />
+  <LinkCard title="Prompts" href="/concepts/prompts" description="Create reusable prompt templates and workflows" />
+  <LinkCard title="Tools" href="/concepts/tools" description="Enable LLMs to perform actions through your server" />
+</CardGrid>
+
+## Contributing
+
+Want to contribute? Check out our [Contributing Guide](/development/contributing) to learn how you can help improve Muppet.
+
+## Support and Feedback
+
+Here's how to get help or provide feedback:
+
+- For bug reports and feature requests related to the Muppet SDKs, or documentation, please [create a GitHub issue](https://github.com/muppet-dev)
+- For discussions or Q&A about the MCP specification, use the [specification discussions](https://github.com/orgs/muppet-dev/discussions)

@@ -49,11 +49,8 @@ export default defineConfig({
           ],
         },
         {
-          label: "Tutorials",
-          items: [
-            { label: "Debugging", slug: "tutorials/debugging" },
-            { label: "Inspector", slug: "tutorials/inspector" },
-          ],
+          label: "Tools",
+          items: [{ label: "Inspector", slug: "tools/inspector" }],
         },
         {
           label: "Concepts",
@@ -62,6 +59,7 @@ export default defineConfig({
             { label: "Resources", slug: "concepts/resources" },
             { label: "Prompts", slug: "concepts/prompts" },
             { label: "Tools", slug: "concepts/tools" },
+            { label: "Transports", slug: "concepts/transports" },
           ],
         },
         {

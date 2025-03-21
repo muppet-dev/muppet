@@ -150,6 +150,11 @@ export async function muppet<
 
       const json = await res.json();
 
+      if (Array.isArray(json))
+        return c.json({
+          result: { contents: json },
+        });
+
       return c.json({ result: json });
     },
   );

@@ -21,5 +21,12 @@ function describeRoute(type: McpPrimitivesValue) {
   };
 }
 
+/**
+ * Describe prompt's name and description
+ */
 export const describePrompt = describeRoute(McpPrimitives.PROMPTS);
+
+/**
+ * Describe tool's name and description
+ */
 export const describeTool = describeRoute(McpPrimitives.TOOLS);

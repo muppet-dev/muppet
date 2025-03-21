@@ -2,6 +2,12 @@ import type { Emitter } from "@hono/event-emitter";
 import type { JSONSchema7 } from "json-schema";
 import type { Logger } from "pino";
 import type { McpPrimitivesValue } from "./utils";
+import type { z } from "zod";
+import type {
+  EmbeddedResourceSchema,
+  ImageContentSchema,
+  TextContentSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 
 export type HasUndefined<T> = undefined extends T ? true : false;
 
@@ -101,3 +107,24 @@ export type MuppetConfiguration = {
     ) => Promisify<ResourceResponse[] | { contents: ResourceResponse[] }>
   >;
 };
+
+export type ToolContentResponseType =
+  | z.infer<typeof TextContentSchema>
+  | z.infer<typeof ImageContentSchema>
+  | z.infer<typeof EmbeddedResourceSchema>;
+
+export type ToolResponseType =
+  | { contents: ToolContentResponseType[] }
+  | ToolContentResponseType[];
+
+export type PromptContentResponseType = {
+  role: "user" | "assistant";
+  content: ToolContentResponseType;
+};
+
+export type PromptResponseType =
+  | {
+      description: string;
+      messages: PromptContentResponseType[];
+    }
+  | PromptContentResponseType[];
