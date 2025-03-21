@@ -1,0 +1,23 @@
+{
+  "name": "docs",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.32.3",
+    "astro": "^5.1.5",
+    "sharp": "^0.32.5"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.7.0",
+    "hono": "^4.7.5",
+    "muppet": "workspace:*",
+    "zod": "^3.24.2"
+  }
+}
