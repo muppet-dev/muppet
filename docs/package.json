@@ -1,23 +1,51 @@
 {
   "name": "docs",
-  "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start",
+    "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.32.3",
-    "astro": "^5.1.5",
-    "sharp": "^0.32.5"
+    "fast-glob": "^3.3.3",
+    "fumadocs-core": "15.1.1",
+    "fumadocs-mdx": "11.5.7",
+    "fumadocs-ui": "15.1.1",
+    "gray-matter": "^4.0.3",
+    "next": "15.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-mdx": "^3.1.0",
+    "remark-stringify": "^11.0.0"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "hono": "^4.7.5",
+    "@tailwindcss/postcss": "^4.0.14",
+    "@types/express": "^5.0.1",
+    "@types/mdx": "^2.0.13",
+    "@types/node": "22.13.10",
+    "@types/react": "^19.0.11",
+    "@types/react-dom": "^19.0.4",
+    "express": "^4.21.2",
+    "hono": "^4.7.4",
     "muppet": "workspace:*",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.14",
+    "typescript": "^5.8.2",
     "zod": "^3.24.2"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": [
+          "^build"
+        ]
+      }
+    }
   }
 }

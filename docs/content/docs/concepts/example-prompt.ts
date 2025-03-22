@@ -5,6 +5,7 @@ import {
   mValidator,
   muppet,
   type PromptResponseType,
+  bridge,
 } from "muppet";
 import z from "zod";
 

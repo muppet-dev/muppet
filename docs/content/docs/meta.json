@@ -1,0 +1,11 @@
+{
+    "title": "muppet",
+    "pages": [
+        "index",
+        "./quickstart",
+        "examples",
+        "./tools",
+        "./concepts",
+        "./development"
+    ]
+}

@@ -1,6 +1,6 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Hono } from "hono";
-import { muppet, registerResources } from "muppet";
+import { muppet, registerResources, bridge } from "muppet";
 
 const app = new Hono();
 

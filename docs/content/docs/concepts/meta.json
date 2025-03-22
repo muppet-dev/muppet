@@ -1,0 +1,10 @@
+{
+    "title": "Concepts",
+    "pages": [
+        "architecture",
+        "resources",
+        "prompts",
+        "tools",
+        "transports"
+    ]
+}

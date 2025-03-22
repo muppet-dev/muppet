@@ -3,20 +3,22 @@ title: For Server Developers
 description: Get started with muppet
 ---
 
-import { Steps } from '@astrojs/starlight/components';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
 
 <Steps>
 
+<Step>
 1. Create a hono.js project using nodejs template
 
    ```bash
    pnpm create hono@latest my-mcp
    ```
-
+</Step>
+<Step>
 2. Install `muppet` and `@modelcontextprotocol/sdk`
 
     ```bash
     pnpm add muppet @modelcontextprotocol/sdk
     ```
-
+</Step>
 </Steps>

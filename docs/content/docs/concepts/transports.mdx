@@ -1,0 +1,15 @@
+---
+title: Transport
+description: Get started with muppet
+---
+
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
+import fs from 'fs';
+
+Using with `StdioServerTransport` -
+
+<DynamicCodeBlock lang="ts" code={fs.readFileSync("./content/docs/concepts/transport-stdio.ts", "utf-8")} />
+
+Using with `SseServerTransport` -
+
+<DynamicCodeBlock lang="ts" code={fs.readFileSync("./content/docs/concepts/transport-sse.ts", "utf-8")} />
