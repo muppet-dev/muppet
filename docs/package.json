@@ -33,10 +33,19 @@
     "@types/react-dom": "^19.0.4",
     "express": "^4.21.2",
     "hono": "^4.7.4",
-    "muppet": "^0.1.0",
+    "muppet": "workspace:*",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.0.14",
     "typescript": "^5.8.2",
     "zod": "^3.24.2"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": [
+          "^build"
+        ]
+      }
+    }
   }
 }
