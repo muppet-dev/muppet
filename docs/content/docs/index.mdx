@@ -3,11 +3,9 @@ title: Introduction
 description: Get started with muppet
 ---
 
-import { CardGrid, LinkCard, Code } from "@astrojs/starlight/components"
-
-![muppet banner](../../assets/banner.png)
-
 Muppet is an open toolkit which standardizes the way you build, test, and deploy your MCPs. If MCP is the USB-C port for AI applications, think of Muppet as the assembly line that produces the USB-C port.
+
+![muppet banner](../../public/banner.png)
 
 ## Why Muppet?
 
@@ -24,20 +22,20 @@ It's inspired by the [hono-openapi](https://www.npmjs.com/package/hono-openapi) 
 Choose the path that best fits your needs:
 
 #### Quick Starts
-<CardGrid>
-  <LinkCard title="For Server Developers" href="/quickstart/server" description="Expose data and content from your servers to LLMs" />
-  <LinkCard title="For Users" href="/quickstart/user" description="Create reusable prompt templates and workflows"/>
-</CardGrid>
+<Cards>
+  <Card title="For Server Developers" href="/docs/quickstart/server" description="Expose data and content from your servers to LLMs" />
+  <Card title="For Users" href="/docs/quickstart/user" description="Create reusable prompt templates and workflows"/>
+</Cards>
 
 ## Capabilities
 
 Checkout how you can implement some of the common capabilities with Muppet:
 
-<CardGrid>
-  <LinkCard title="Resources" href="/concepts/resources" description="Expose data and content from your servers to LLMs" />
-  <LinkCard title="Prompts" href="/concepts/prompts" description="Create reusable prompt templates and workflows" />
-  <LinkCard title="Tools" href="/concepts/tools" description="Enable LLMs to perform actions through your server" />
-</CardGrid>
+<Cards>
+  <Card title="Resources" href="/docs/concepts/resources" description="Expose data and content from your servers to LLMs" />
+  <Card title="Prompts" href="/docs/concepts/prompts" description="Create reusable prompt templates and workflows" />
+  <Card title="Tools" href="/docs/concepts/tools" description="Enable LLMs to perform actions through your server" />
+</Cards>
 
 ## Contributing
 
