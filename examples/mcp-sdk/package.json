@@ -7,7 +7,7 @@
     "build": "pkgroll --minify"
   },
   "dependencies": {
-    "express": "^4.21.2",
+    "@hono/node-server": "^1.14.0",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "hono": "^4.7.4",
     "muppet": "workspace:*",
@@ -18,8 +18,7 @@
     "@types/node": "^22.13.10",
     "pkgroll": "^2.11.2",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2",
-    "@types/express": "^5.0.1"
+    "typescript": "^5.8.2"
   },
   "nx": {
     "targets": {
