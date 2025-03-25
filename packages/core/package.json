@@ -7,20 +7,12 @@
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "dev": "pkgroll --watch",
     "build": "pkgroll --minify --clean-dist"
   },
-  "keywords": [
-    "hono",
-    "mcps",
-    "mcp",
-    "standard-schema",
-    "toolkit"
-  ],
+  "keywords": ["hono", "mcps", "mcp", "standard-schema", "toolkit"],
   "homepage": "https://github.com/muppet-dev/muppet",
   "publishConfig": {
     "access": "public"
@@ -41,12 +33,6 @@
     "hono": "^4.6.13"
   },
   "peerDependenciesMeta": {
-    "@hono/standard-validator": {
-      "optional": true
-    },
-    "@modelcontextprotocol/sdk": {
-      "optional": true
-    },
     "@standard-schema/spec": {
       "optional": true
     },
@@ -55,13 +41,25 @@
     }
   },
   "exports": {
-    "import": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
-    "require": {
-      "types": "./dist/index.d.cts",
-      "default": "./dist/index.cjs"
+    "./transports": {
+      "import": {
+        "types": "./dist/transports.d.ts",
+        "default": "./dist/transports.js"
+      },
+      "require": {
+        "types": "./dist/transports.d.cts",
+        "default": "./dist/transports.cjs"
+      }
     }
   },
   "devDependencies": {
