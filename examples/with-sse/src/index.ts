@@ -94,27 +94,23 @@ const mcpServer = muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
   resources: {
-    https: () => {
+    https: (uri) => {
+      if (uri === "https://lorem.ipsum")
+        return [
+          {
+            uri: "task1",
+            text: "This is a fixed task",
+          },
+        ];
+
       return [
         {
           uri: "task1",
-          text: "Task 1",
+          text: "This is dynamic task",
         },
         {
           uri: "task2",
-          text: "Task 2",
-        },
-        {
-          uri: "task3",
-          text: "Task 3",
-        },
-        {
-          uri: "task4",
-          text: "Task 4",
-        },
-        {
-          uri: "task5",
-          text: "Task 5",
+          text: "Could be fetched from a DB",
         },
       ];
     },
