@@ -10,7 +10,8 @@ import {
   type PromptResponseType,
 } from "muppet";
 import z from "zod";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import express from "express";
 
 const app = new Hono();
 
@@ -26,7 +27,7 @@ app.post(
   mValidator(
     "json",
     z.object({
-      name: z.string(),
+      name: z.string().optional(),
     }),
   ),
   (c) => {
@@ -34,7 +35,7 @@ app.post(
     return c.json<ToolResponseType>([
       {
         type: "text",
-        text: `Hello ${payload.name}!`,
+        text: `Hello ${payload.name ?? "World"}!`,
       },
     ]);
   },
@@ -120,7 +121,21 @@ const mcpServer = muppet(app, {
   },
 });
 
-mcpServer.then((mcp) => {
+let transport: SSEServerTransport | null = null;
+
+const server = express().use((req, _, next) => {
+  console.log(req.method, req.url);
+
+  next();
+});
+
+server.get("/", async (_, res) => {
+  // Initialize the transport
+  transport = new SSEServerTransport("/messages", res);
+
+  // Getting the mcp instance
+  const mcp = await mcpServer;
+
   if (!mcp) {
     throw new Error("MCP not initialized");
   }
@@ -128,6 +143,21 @@ mcpServer.then((mcp) => {
   // Bridge the mcp with the transport
   bridge({
     mcp,
-    transport: new StdioServerTransport(),
+    transport,
   });
+});
+
+/**
+ * This is the endpoint where the client will send the messages
+ */
+server.post("/messages", (req, res) => {
+  if (transport) {
+    transport.handlePostMessage(req, res);
+  }
+});
+
+const PORT = 3001;
+
+server.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`);
 });
