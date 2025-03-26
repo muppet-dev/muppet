@@ -7,20 +7,13 @@
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "dev": "pkgroll --watch",
-    "build": "pkgroll --minify --clean-dist"
+    "build": "pkgroll --minify --clean-dist",
+    "test": "vitest"
   },
-  "keywords": [
-    "hono",
-    "mcps",
-    "mcp",
-    "standard-schema",
-    "toolkit"
-  ],
+  "keywords": ["hono", "mcps", "mcp", "standard-schema", "toolkit"],
   "homepage": "https://github.com/muppet-dev/muppet",
   "publishConfig": {
     "access": "public"
