@@ -13,36 +13,3 @@ export const McpPrimitives = {
 
 export type McpPrimitivesValue =
   (typeof McpPrimitives)[keyof typeof McpPrimitives];
-
-export type GetRequestInitOptions = {
-  message?: unknown;
-  c?: Context;
-};
-
-export function getRequestInit(options: GetRequestInitOptions) {
-  const { message, c } = options;
-
-  let req: RequestInit = {
-    method: "POST",
-  };
-
-  if (c) {
-    req = {
-      ...req,
-      headers: c.req.header(),
-    };
-  }
-
-  if (message) {
-    req = {
-      ...req,
-      body: JSON.stringify(message),
-      headers: {
-        ...req.headers,
-        "content-type": "application/json",
-      },
-    };
-  }
-
-  return req;
-}

@@ -8,6 +8,7 @@ import type {
   ImageContentSchema,
   TextContentSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import type { ValidationTargets } from "hono";
 
 export type HasUndefined<T> = undefined extends T ? true : false;
 
@@ -17,9 +18,13 @@ export type DescribeOptions = {
 };
 
 export type ToolHandlerResponse = {
-  resolver?:
+  toJson?:
     | DescribeOptions
     | ((config?: Record<string, unknown>) => Promise<JSONSchema7>);
+  /**
+   * Target for validation
+   */
+  validationTarget?: keyof ValidationTargets;
   type?: McpPrimitivesValue;
 };
 
@@ -31,14 +36,21 @@ export type ServerConfiguration = {
 
 export type ToolsConfiguration = Record<
   string,
-  DescribeOptions & { inputSchema: JSONSchema7; path: string }
+  DescribeOptions & {
+    inputSchema: JSONSchema7;
+    schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
+    path: string;
+    method: string;
+  }
 >;
 
 export type PromptConfiguration = Record<
   string,
   DescribeOptions & {
     arguments: { name: string; description?: string; required?: boolean }[];
+    schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
     path: string;
+    method: string;
   }
 >;
 
@@ -46,6 +58,7 @@ export type ResourceConfiguration = Record<
   string,
   {
     path: string;
+    method: string;
   }
 >;
 
@@ -78,13 +91,17 @@ export type ResourceResponse = {
   blob?: string;
 };
 
+// Path -> Method -> Configuration
 export type ConceptConfiguration = Record<
   string,
-  | (DescribeOptions & {
-      schema?: JSONSchema7;
-      type?: McpPrimitivesValue;
-      path: string;
-    })
+  | Record<
+      string,
+      | (DescribeOptions & {
+          schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
+          type?: McpPrimitivesValue;
+        })
+      | undefined
+    >
   | undefined
 >;
 

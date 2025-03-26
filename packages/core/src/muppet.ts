@@ -11,7 +11,13 @@ import {
   SUPPORTED_PROTOCOL_VERSIONS,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Hono, type Context } from "hono";
-import type { BlankEnv, BlankSchema, Env, Schema } from "hono/types";
+import type {
+  BlankEnv,
+  BlankSchema,
+  Env,
+  Schema,
+  ValidationTargets,
+} from "hono/types";
 import type { JSONSchema7 } from "json-schema";
 import type { Logger } from "pino";
 import type {
@@ -24,7 +30,7 @@ import type {
   ServerConfiguration,
   ToolHandlerResponse,
 } from "./types";
-import { getRequestInit, McpPrimitives, uniqueSymbol } from "./utils";
+import { McpPrimitives, uniqueSymbol } from "./utils";
 
 export async function muppet<
   E extends Env = BlankEnv,
@@ -114,6 +120,9 @@ export async function muppet<
 
   mcp.post("/ping", (c) => c.json({ result: {} }));
 
+  /**
+   * Tools router
+   */
   const toolsRouter = new Hono<BaseEnv>().use(async (c, next) => {
     if (!(McpPrimitives.TOOLS in c.get("specs"))) {
       throw new Error("No tools available");
@@ -126,7 +135,11 @@ export async function muppet<
     c.json({
       result: {
         tools: Object.values(c.get("specs").tools ?? {}).map(
-          ({ path, ...tool }) => tool,
+          ({ name, description, inputSchema }) => ({
+            name,
+            description,
+            inputSchema,
+          }),
         ),
       },
     }),
@@ -138,15 +151,21 @@ export async function muppet<
     async (c) => {
       const { params } = c.req.valid("json");
 
-      const path = c.get("specs").tools?.[params.name].path;
+      const { path, method, schema } =
+        c.get("specs").tools?.[params.name] ?? {};
 
-      if (!path) {
+      if (!path || !method) {
         throw new Error("Unable to find the path for the tool!");
       }
 
-      const res = await c
-        .get("app")
-        .request(path, getRequestInit({ message: params.arguments, c }));
+      const res = await c.get("app").request(
+        ...getRequestInit({
+          path,
+          method,
+          schema,
+          args: params,
+        }),
+      );
 
       const json = await res.json();
 
@@ -159,6 +178,9 @@ export async function muppet<
     },
   );
 
+  /**
+   * Prompt Router
+   */
   const promptsRouter = new Hono<BaseEnv>().use(async (c, next) => {
     if (!(McpPrimitives.PROMPTS in c.get("specs"))) {
       throw new Error("No prompts available");
@@ -189,9 +211,14 @@ export async function muppet<
         throw new Error("Unable to find the path for the tool!");
       }
 
-      const res = await c
-        .get("app")
-        .request(prompt.path, getRequestInit({ message: params.arguments, c }));
+      const res = await c.get("app").request(
+        ...getRequestInit({
+          path: prompt.path,
+          method: prompt.method,
+          schema: prompt.schema,
+          args: params.arguments,
+        }),
+      );
 
       const json = await res.json();
 
@@ -204,6 +231,9 @@ export async function muppet<
     },
   );
 
+  /**
+   * Resource Router
+   */
   const resourcesRouter = new Hono<BaseEnv>().use(async (c, next) => {
     if (!(McpPrimitives.RESOURCES in c.get("specs"))) {
       throw new Error("No resources available");
@@ -216,11 +246,16 @@ export async function muppet<
     T extends McpResource | McpResourceTemplate,
   >(c: Context<BaseEnv>, mapFn: (resource: Resource) => T | undefined) {
     const responses = await Promise.all(
-      Object.values(c.get("specs").resources ?? {}).map(async ({ path }) => {
-        const res = await c.get("app").request(path, getRequestInit({ c }));
+      Object.values(c.get("specs").resources ?? {}).map(
+        async ({ path, method }) => {
+          const res = await c.get("app").request(path, {
+            method,
+            headers: c.req.header(),
+          });
 
-        return res.json() as Promise<Resource[]>;
-      }),
+          return res.json() as Promise<Resource[]>;
+        },
+      ),
     );
 
     return responses
@@ -344,19 +379,19 @@ export async function generateSpecs<
   for (const route of hono.routes) {
     if (!(uniqueSymbol in route.handler)) continue;
 
-    const { resolver, type } = route.handler[
+    const { validationTarget, toJson, type } = route.handler[
       uniqueSymbol
     ] as ToolHandlerResponse;
 
     let result: DescribeOptions | JSONSchema7;
 
-    if (typeof resolver === "function") {
-      result = await resolver();
+    if (typeof toJson === "function") {
+      result = await toJson();
     } else {
-      result = resolver ?? {};
+      result = toJson ?? {};
     }
 
-    const concept = concepts[route.path];
+    const concept = concepts[route.path]?.[route.method];
 
     if (concept?.type && type && concept.type !== type) {
       throw new Error(
@@ -364,69 +399,235 @@ export async function generateSpecs<
       );
     }
 
-    concepts[route.path] = {
-      ...result,
-      ...(concepts[route.path] ?? {}),
+    let payload: Record<string, unknown> = {
+      ...(concept ?? {}),
       type: type ?? concept?.type,
-      path: route.path,
+    };
+
+    if (validationTarget && "schema" in result) {
+      payload.schema = {
+        ...(payload.schema ?? {}),
+        [validationTarget]: result.schema,
+      };
+    } else {
+      payload = {
+        ...payload,
+        ...result,
+      };
+    }
+
+    concepts[route.path] = {
+      ...(concepts[route.path] ?? {}),
+      [route.method]: payload,
     };
   }
 
   const configuration: ServerConfiguration = {};
-  for (const [path, concept] of Object.entries(concepts)) {
-    if (!concept) continue;
+  for (const [path, conceptByMethod] of Object.entries(concepts)) {
+    if (!conceptByMethod) continue;
 
-    if (!concept.type) {
-      throw new Error(`Type not found for ${path}`);
-    }
+    for (const [method, concept] of Object.entries(conceptByMethod)) {
+      if (!concept) continue;
 
-    if (concept.type === McpPrimitives.TOOLS) {
-      if (!configuration.tools) {
-        configuration.tools = {};
+      if (!concept.type) {
+        throw new Error(`Type not found for ${path}`);
       }
 
-      const key = concept.name ?? path;
+      if (concept.type === McpPrimitives.TOOLS) {
+        if (!configuration.tools) {
+          configuration.tools = {};
+        }
 
-      configuration.tools[key] = {
-        name: key,
-        description: concept.description,
-        inputSchema: concept.schema ?? {},
-        path,
-      };
-    } else if (concept.type === McpPrimitives.PROMPTS) {
-      if (!configuration.prompts) {
-        configuration.prompts = {};
+        const key = concept.name ?? generateKey(method, path);
+
+        configuration.tools[key] = {
+          name: key,
+          description: concept.description,
+          inputSchema: mergeSchemas(concept.schema) ?? {},
+          path,
+          method,
+        };
+      } else if (concept.type === McpPrimitives.PROMPTS) {
+        if (!configuration.prompts) {
+          configuration.prompts = {};
+        }
+
+        const key = concept.name ?? generateKey(method, path);
+
+        const args: PromptConfiguration[string]["arguments"] = [];
+        const meragedSchema = mergeSchemas(concept.schema) ?? {};
+
+        for (const arg of Object.keys(meragedSchema)) {
+          args.push({
+            name: arg,
+            // @ts-expect-error
+            description: meragedSchema.properties?.[arg].description,
+            required: meragedSchema.required?.includes(arg) ?? false,
+          });
+        }
+
+        configuration.prompts[key] = {
+          name: key,
+          description: concept.description,
+          arguments: args,
+          path,
+          method,
+        };
+      } else if (concept.type === McpPrimitives.RESOURCES) {
+        if (!configuration.resources) {
+          configuration.resources = {};
+        }
+
+        configuration.resources[generateKey(method, path)] = {
+          ...configuration.resources[path],
+          [method]: {
+            path,
+          },
+        };
       }
-
-      const key = concept.name ?? path;
-
-      const args: PromptConfiguration[string]["arguments"] = [];
-
-      for (const arg of Object.keys(concept.schema?.properties ?? {})) {
-        args.push({
-          name: arg,
-          // @ts-expect-error
-          description: concept.schema?.properties?.[arg].description,
-          required: concept.schema?.required?.includes(arg) ?? false,
-        });
-      }
-
-      configuration.prompts[key] = {
-        name: key,
-        description: concept.description,
-        arguments: args,
-        path,
-      };
-    } else if (concept.type === McpPrimitives.RESOURCES) {
-      if (!configuration.resources) {
-        configuration.resources = {};
-      }
-
-      configuration.resources[path] = {
-        path,
-      };
     }
   }
 
   return configuration;
+}
+
+function mergeSchemas(
+  schema?: { [K in keyof ValidationTargets]?: JSONSchema7 },
+) {
+  let tmp: JSONSchema7 | undefined = undefined;
+
+  for (const sch of Object.values(schema ?? {})) {
+    if (!tmp) {
+      tmp = sch;
+      continue;
+    }
+
+    tmp = {
+      ...tmp,
+      properties: {
+        ...tmp.properties,
+        ...sch.properties,
+      },
+      required: [...(tmp.required ?? []), ...(sch.required ?? [])],
+    };
+  }
+
+  return tmp;
+}
+
+function generateKey(method: string, path: string) {
+  return `${method}:${path}`;
+}
+
+type GetRequestInitOptions = {
+  path: string;
+  method: string;
+  schema?: {
+    [K in keyof ValidationTargets]?: JSONSchema7;
+  };
+  args?: Record<string, unknown>;
+};
+
+function getRequestInit(options: GetRequestInitOptions): [string, RequestInit] {
+  const { path, method, schema, args } = options;
+
+  const targetProps: {
+    [K in keyof ValidationTargets]?: Record<string, unknown>;
+  } = {};
+  const reqInit: RequestInit = {
+    method,
+  };
+
+  for (const [target, { properties }] of Object.entries(schema ?? {}) as [
+    keyof ValidationTargets,
+    JSONSchema7,
+  ][]) {
+    if (!properties) continue;
+
+    targetProps[target] = Object.keys(properties).reduce<
+      Record<string, unknown>
+    >((prev, key) => {
+      if (args?.[key] !== undefined) prev[key] = args?.[key];
+      return prev;
+    }, {});
+  }
+
+  if (Object.values(targetProps.header ?? {}).length > 0) {
+    reqInit.headers = targetProps.header as Record<string, string>;
+  }
+  if (Object.values(targetProps.json ?? {}).length > 0) {
+    reqInit.body = JSON.stringify(targetProps.json);
+    reqInit.headers = {
+      ...reqInit.headers,
+      "content-type": "application/json",
+    };
+  }
+
+  // Handle query params
+  const queryString = querySerializer(targetProps.query);
+  const pathWithParams = placeParamValues(path, targetProps.param);
+
+  return [
+    `${pathWithParams}${queryString.length > 0 ? `?${queryString}` : ""}`,
+    reqInit,
+  ];
+}
+
+function placeParamValues(path: string, params?: Record<string, unknown>) {
+  return path
+    .split("/")
+    .map((x) => {
+      let tmp = x;
+      if (tmp.startsWith(":")) {
+        const match = tmp.match(/^:([^{?]+)(?:{(.+)})?(\?)?$/);
+        if (match) {
+          const paramName = match[1];
+          const value = params?.[paramName];
+
+          if (value) tmp = String(value);
+        } else {
+          tmp = tmp.slice(1, tmp.length);
+          if (tmp.endsWith("?")) tmp = tmp.slice(0, -1);
+        }
+      }
+
+      return tmp;
+    })
+    .join("/");
+}
+
+type QuerySerializerOptions = {
+  prefix?: string;
+  separator?: string;
+};
+
+function querySerializer(
+  query?: Record<string, unknown>,
+  options?: QuerySerializerOptions,
+) {
+  const { prefix, separator = "__" } = options ?? {};
+
+  return Object.entries(query ?? {})
+    .reduce<string[]>((prev, [key, value]) => {
+      const uniqueKey = `${prefix ? `${prefix}${separator}` : ""}${key}`;
+      if (value) {
+        if (Array.isArray(value))
+          prev.push(
+            ...value
+              .filter((val) => val !== undefined)
+              .map((val) => `${uniqueKey}=${val}`),
+          );
+        else if (typeof value === "object")
+          prev.push(
+            querySerializer(value as Record<string, unknown>, {
+              prefix: uniqueKey,
+              separator,
+            }),
+          );
+        else prev.push(`${uniqueKey}=${value}`);
+      }
+
+      return prev;
+    }, [])
+    .join("&");
 }

@@ -14,7 +14,7 @@ function describeRoute(type: McpPrimitivesValue) {
 
     return Object.assign(middleware, {
       [uniqueSymbol]: {
-        resolver: docs,
+        toJson: docs,
         type,
       },
     });

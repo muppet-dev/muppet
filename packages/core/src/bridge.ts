@@ -6,7 +6,6 @@ import {
 import type { Env, Hono, Schema } from "hono";
 import type { BlankSchema } from "hono/types";
 import type { Logger } from "pino";
-import { getRequestInit } from "./utils";
 
 export type BridgeOptions<
   E extends Env = any,
@@ -94,10 +93,13 @@ export async function handleMessage(options: HandleMessageOptions) {
 
   const validatedMessage = RequestSchema.parse(message);
 
-  const response = await app.request(
-    validatedMessage.method,
-    getRequestInit({ message }),
-  );
+  const response = await app.request(validatedMessage.method, {
+    method: "POST",
+    body: JSON.stringify(message),
+    headers: {
+      "content-type": "application/json",
+    },
+  });
 
   // If there's no payload, we don't need to send a response. Eg. Notifications
   if (response.status === 204) return null;

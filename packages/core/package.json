@@ -41,12 +41,6 @@
     "hono": "^4.6.13"
   },
   "peerDependenciesMeta": {
-    "@hono/standard-validator": {
-      "optional": true
-    },
-    "@modelcontextprotocol/sdk": {
-      "optional": true
-    },
     "@standard-schema/spec": {
       "optional": true
     },
