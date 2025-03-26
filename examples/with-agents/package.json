@@ -6,8 +6,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.8.0",
-    "agents": "^0.0.45",
-    "hono": "^4.7.5",
+    "hono": "^4.7.4",
     "muppet": "workspace:*",
     "zod": "^3.24.2"
   },

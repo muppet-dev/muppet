@@ -1,9 +1,109 @@
-import { Hono } from 'hono'
+import { Hono } from "hono";
+import { describeTool, mValidator, type ToolResponseType } from "muppet";
+import z from "zod";
 
-const app = new Hono()
+const app = new Hono();
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+/**
+ * This is a simple 'hello world', which takes a name as input and returns a greeting
+ */
+app.post(
+  "/hello",
+  describeTool({
+    name: "Hello World",
+    description: "A simple hello world route",
+  }),
+  mValidator(
+    "json",
+    z.object({
+      name: z.string(),
+    }),
+  ),
+  (c) => {
+    const payload = c.req.valid("json");
+    return c.json<ToolResponseType>([
+      {
+        type: "text",
+        text: `Hello ${payload.name}!`,
+      },
+    ]);
+  },
+);
 
-export default app
+/**
+ * Dummy resources, their fetchers are define in the muppet's configuration
+ */
+app.post(
+  "/documents",
+  registerResources((c) => {
+    return c.json([
+      {
+        uri: "https://lorem.ipsum",
+        name: "Todo list",
+        mimeType: "text/plain",
+      },
+      {
+        type: "template",
+        uri: "https://lorem.{ending}",
+        name: "Todo list",
+        mimeType: "text/plain",
+      },
+    ]);
+  }),
+);
+
+/**
+ * A simple prompt
+ */
+app.post(
+  "/simple",
+  describePrompt({ name: "Simple Prompt" }),
+  mValidator(
+    "json",
+    z.object({
+      name: z.string(),
+    }),
+  ),
+  (c) => {
+    const { name } = c.req.valid("json");
+    return c.json<PromptResponseType>([
+      {
+        role: "user",
+        content: {
+          type: "text",
+          text: `This is a simple prompt for ${name}`,
+        },
+      },
+    ]);
+  },
+);
+
+// Creating a mcp using muppet
+const mcpServer = muppet(app, {
+  name: "My Muppet",
+  version: "1.0.0",
+  resources: {
+    https: (uri) => {
+      if (uri === "https://lorem.ipsum")
+        return [
+          {
+            uri: "task1",
+            text: "This is a fixed task",
+          },
+        ];
+
+      return [
+        {
+          uri: "task1",
+          text: "This is dynamic task",
+        },
+        {
+          uri: "task2",
+          text: "Could be fetched from a DB",
+        },
+      ];
+    },
+  },
+});
+
+export default app;
