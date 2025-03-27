@@ -11,6 +11,7 @@ import {
 } from "muppet";
 import z from "zod";
 import { SSEHonoTransport, streamSSE } from "muppet/streaming";
+import { serve } from "@hono/node-server";
 
 const app = new Hono();
 
@@ -156,4 +157,12 @@ server.onError((err, c) => {
   return c.body(err.message, 500);
 });
 
-export default server;
+serve(
+  {
+    fetch: server.fetch,
+    port: 3001,
+  },
+  (info) => {
+    console.log(`Server started at http://localhost:${info.port}`);
+  },
+);
