@@ -1,17 +1,17 @@
 import { Hono } from "hono";
 import {
-  muppet,
-  describeTool,
+  type PromptResponseType,
+  type ToolResponseType,
   describePrompt,
+  describeTool,
   mValidator,
+  muppet,
   registerResources,
   bridge,
-  type ToolResponseType,
-  type PromptResponseType,
 } from "muppet";
 import z from "zod";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import express from "express";
+import { SSEHonoTransport, streamSSE } from "muppet/streaming";
+import { serve } from "@hono/node-server";
 
 const app = new Hono();
 
@@ -27,7 +27,7 @@ app.post(
   mValidator(
     "json",
     z.object({
-      name: z.string().optional(),
+      name: z.string(),
     }),
   ),
   (c) => {
@@ -35,7 +35,7 @@ app.post(
     return c.json<ToolResponseType>([
       {
         type: "text",
-        text: `Hello ${payload.name ?? "World"}!`,
+        text: `Hello ${payload.name}!`,
       },
     ]);
   },
@@ -117,43 +117,53 @@ const mcpServer = muppet(app, {
   },
 });
 
-let transport: SSEServerTransport | null = null;
+/**
+ * For SSE transport
+ */
+let transport: SSEHonoTransport | null = null;
 
-const server = express().use((req, _, next) => {
-  console.log(req.method, req.url);
+const server = new Hono();
 
-  next();
-});
+server.get("/sse", async (c) => {
+  c.header("Content-Encoding", "Identity");
+  return streamSSE(c, async (stream) => {
+    transport = new SSEHonoTransport("/messages");
+    transport.connectWithStream(stream);
 
-server.get("/sse", async (_, res) => {
-  // Initialize the transport
-  transport = new SSEServerTransport("/messages", res);
+    const mcp = await mcpServer.catch((err) => {
+      console.error(err);
+    });
+    if (!mcp) {
+      throw new Error("MCP not initialized");
+    }
 
-  // Getting the mcp instance
-  const mcp = await mcpServer;
-
-  if (!mcp) {
-    throw new Error("MCP not initialized");
-  }
-
-  // Bridge the mcp with the transport
-  bridge({
-    mcp,
-    transport,
+    await bridge({
+      mcp,
+      transport,
+    });
   });
 });
 
-/**
- * This is the endpoint where the client will send the messages
- */
-server.post("/messages", (req, res) => {
-  if (transport) {
-    transport.handlePostMessage(req, res);
+server.post("/messages", async (c) => {
+  if (!transport) {
+    throw new Error("Transport not initialized");
   }
+
+  await transport.handlePostMessage(c);
+  return c.text("ok");
 });
 
-const PORT = 3001;
-
-server.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
+server.onError((err, c) => {
+  console.error(err);
+  return c.body(err.message, 500);
 });
+
+serve(
+  {
+    fetch: server.fetch,
+    port: 3001,
+  },
+  (info) => {
+    console.log(`Server started at http://localhost:${info.port}`);
+  },
+);
