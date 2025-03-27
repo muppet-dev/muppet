@@ -17,6 +17,27 @@ export type DescribeOptions = {
   description?: string;
 };
 
+export type CompletionFn = (args: {
+  name: string;
+  value: string;
+}) => Promisify<
+  | {
+      /**
+       * An array of completion values. Must not exceed 100 items.
+       */
+      values: string[];
+      /**
+       * The total number of completion options available. This can exceed the number of values actually sent in the response.
+       */
+      total?: number;
+      /**
+       * Indicates whether there are additional completion options beyond those provided in the current response, even if the exact total is unknown.
+       */
+      hasMore?: boolean;
+    }
+  | string[]
+>;
+
 export type ToolHandlerResponse = {
   toJson?:
     | DescribeOptions
@@ -51,6 +72,7 @@ export type PromptConfiguration = Record<
     schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
     path: string;
     method: string;
+    completion?: CompletionFn;
   }
 >;
 
@@ -76,6 +98,7 @@ export type Resource =
       name: string;
       description?: string;
       mimeType?: string;
+      completion?: CompletionFn;
     };
 
 export type ResourceResponse = {
@@ -99,6 +122,7 @@ export type ConceptConfiguration = Record<
       | (DescribeOptions & {
           schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
           type?: McpPrimitivesValue;
+          completion?: CompletionFn;
         })
       | undefined
     >

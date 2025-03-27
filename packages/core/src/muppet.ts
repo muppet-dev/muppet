@@ -1,8 +1,7 @@
 import { sValidator } from "@hono/standard-validator";
 import {
-  type Resource as McpResource,
-  type ResourceTemplate as McpResourceTemplate,
   CallToolRequestSchema,
+  CompleteRequestSchema,
   ErrorCode,
   GetPromptRequestSchema,
   InitializeRequestSchema,
@@ -22,6 +21,7 @@ import type { JSONSchema7 } from "json-schema";
 import type { Logger } from "pino";
 import type {
   AvailableEvents,
+  CompletionFn,
   ConceptConfiguration,
   DescribeOptions,
   MuppetConfiguration,
@@ -208,7 +208,7 @@ export async function muppet<
       const prompt = c.get("specs").prompts?.[params.name];
 
       if (!prompt) {
-        throw new Error("Unable to find the path for the tool!");
+        throw new Error("Unable to find the path for the prompt!");
       }
 
       const res = await c.get("app").request(
@@ -242,9 +242,10 @@ export async function muppet<
     await next();
   });
 
-  async function findAllTheResources<
-    T extends McpResource | McpResourceTemplate,
-  >(c: Context<BaseEnv>, mapFn: (resource: Resource) => T | undefined) {
+  async function findAllTheResources<T>(
+    c: Context<BaseEnv>,
+    mapFn: (resource: Resource) => T | undefined,
+  ) {
     const responses = await Promise.all(
       Object.values(c.get("specs").resources ?? {}).map(
         async ({ path, method }) => {
@@ -258,16 +259,13 @@ export async function muppet<
       ),
     );
 
-    return responses
-      .flat(2)
-      .reduce((prev: McpResource[], resource: Resource) => {
-        const mapped = mapFn(resource);
+    return responses.flat(2).reduce((prev: T[], resource: Resource) => {
+      const mapped = mapFn(resource);
 
-        // @ts-expect-error
-        if (mapped) prev.push(mapped);
+      if (mapped) prev.push(mapped);
 
-        return prev;
-      }, []);
+      return prev;
+    }, []);
   }
 
   resourcesRouter.post("/list", async (c) => {
@@ -339,6 +337,55 @@ export async function muppet<
   mcp.route("/tools", toolsRouter);
   mcp.route("/prompts", promptsRouter);
   mcp.route("/resources", resourcesRouter);
+
+  mcp.post(
+    "/completion/complete",
+    sValidator("json", CompleteRequestSchema),
+    async (c) => {
+      const { params } = c.req.valid("json");
+
+      let completionFn: CompletionFn | undefined;
+
+      if (params.ref.type === "ref/prompt") {
+        completionFn = c.get("specs").prompts?.[params.ref.name].completion;
+      } else if (params.ref.type === "ref/resource") {
+        completionFn = await findAllTheResources(c, (resource) => {
+          if (resource.type === "template" && resource.uri === params.ref.uri) {
+            return resource.completion;
+          }
+
+          return;
+        }).then((res) => res[0]);
+      }
+
+      if (!completionFn)
+        return c.json({
+          result: {
+            completion: {
+              values: [],
+              total: 0,
+              hasMore: false,
+            },
+          },
+        });
+
+      const values = await completionFn(params.argument);
+
+      if (Array.isArray(values)) {
+        return c.json({
+          result: {
+            completion: {
+              values,
+              total: values.length,
+              hasMore: false,
+            },
+          },
+        });
+      }
+
+      return c.json({ result: { completion: values } });
+    },
+  );
 
   mcp.notFound((c) => {
     c.get("logger")?.info("Method not found");
@@ -470,6 +517,7 @@ export async function generateSpecs<
         configuration.prompts[key] = {
           name: key,
           description: concept.description,
+          completion: concept.completion,
           arguments: args,
           path,
           method,

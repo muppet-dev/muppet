@@ -105,11 +105,9 @@ export async function handleMessage(options: HandleMessageOptions) {
   if (response.status === 204) return null;
 
   const payload = (await response.json()) as JSONRPCMessage;
+  payload.jsonrpc = "2.0";
 
   logger?.info({ payload }, "Response payload");
 
-  return {
-    ...payload,
-    jsonrpc: "2.0",
-  };
+  return payload;
 }

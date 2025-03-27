@@ -70,7 +70,10 @@ app.post(
  */
 app.post(
   "/simple",
-  describePrompt({ name: "Simple Prompt" }),
+  describePrompt({
+    name: "Simple Prompt",
+    completion: () => ["muppet", "hono", "edge"],
+  }),
   mValidator(
     "json",
     z.object({
