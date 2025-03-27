@@ -163,7 +163,7 @@ export async function muppet<
           path,
           method,
           schema,
-          args: params,
+          args: params.arguments,
         }),
       );
 
