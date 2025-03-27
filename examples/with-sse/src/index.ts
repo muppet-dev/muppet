@@ -125,7 +125,7 @@ const server = express().use((req, _, next) => {
   next();
 });
 
-server.get("/", async (_, res) => {
+server.get("/sse", async (_, res) => {
   // Initialize the transport
   transport = new SSEServerTransport("/messages", res);
 
