@@ -151,9 +151,40 @@ importers:
 
   examples/with-sse:
     dependencies:
+      '@hono/node-server':
+        specifier: ^1.14.0
+        version: 1.14.0(hono@4.7.4)
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.7.0
+      hono:
+        specifier: ^4.7.4
+        version: 4.7.4
+      muppet:
+        specifier: workspace:*
+        version: link:../../packages/core
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.13.10
+      pkgroll:
+        specifier: ^2.11.2
+        version: 2.11.2(typescript@5.8.2)
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.3
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
+
+  examples/with-sse-express:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.7.0
+        version: 1.8.0
       express:
         specifier: ^4.21.2
         version: 4.21.2
@@ -170,68 +201,6 @@ importers:
       '@types/express':
         specifier: ^5.0.1
         version: 5.0.1
-      '@types/node':
-        specifier: ^22.13.10
-        version: 22.13.10
-      pkgroll:
-        specifier: ^2.11.2
-        version: 2.11.2(typescript@5.8.2)
-      tsx:
-        specifier: ^4.19.3
-        version: 4.19.3
-      typescript:
-        specifier: ^5.8.2
-        version: 5.8.2
-
-  examples/with-sse-auth:
-    dependencies:
-      '@hono/node-server':
-        specifier: ^1.14.0
-        version: 1.14.0(hono@4.7.4)
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.7.0
-        version: 1.8.0
-      hono:
-        specifier: ^4.7.4
-        version: 4.7.4
-      muppet:
-        specifier: workspace:*
-        version: link:../../packages/core
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.2
-    devDependencies:
-      '@types/node':
-        specifier: ^22.13.10
-        version: 22.13.10
-      pkgroll:
-        specifier: ^2.11.2
-        version: 2.11.2(typescript@5.8.2)
-      tsx:
-        specifier: ^4.19.3
-        version: 4.19.3
-      typescript:
-        specifier: ^5.8.2
-        version: 5.8.2
-
-  examples/with-sse-nodejs:
-    dependencies:
-      '@hono/node-server':
-        specifier: ^1.14.0
-        version: 1.14.0(hono@4.7.4)
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.7.0
-        version: 1.8.0
-      hono:
-        specifier: ^4.7.4
-        version: 4.7.4
-      muppet:
-        specifier: workspace:*
-        version: link:../../packages/core
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.2
-    devDependencies:
       '@types/node':
         specifier: ^22.13.10
         version: 22.13.10
