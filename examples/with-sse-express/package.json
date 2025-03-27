@@ -1,5 +1,5 @@
 {
-  "name": "with-sse",
+  "name": "with-sse-express",
   "version": "0.0.1",
   "bin": "./dist/index.js",
   "scripts": {
@@ -23,9 +23,7 @@
   "nx": {
     "targets": {
       "build": {
-        "dependsOn": [
-          "^build"
-        ]
+        "dependsOn": ["^build"]
       }
     }
   }
