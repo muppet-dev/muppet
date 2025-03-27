@@ -13,6 +13,7 @@ import { getRuntimeKey } from "hono/adapter";
  * This can work in all the environments that support SSE with Hono.
  */
 export class SSEHonoTransport implements Transport {
+  private stream!: SSEStreamingApi;
   private _stream?: SSEStreamingApi;
   private _sessionId: string;
 
@@ -25,9 +26,17 @@ export class SSEHonoTransport implements Transport {
    */
   constructor(
     private _endpoint: string,
-    private stream: SSEStreamingApi,
+    sessionId?: string,
   ) {
-    this._sessionId = crypto.randomUUID();
+    this._sessionId = sessionId ?? crypto.randomUUID();
+  }
+
+  connectWithStream(stream: SSEStreamingApi) {
+    this.stream = stream;
+  }
+
+  get hasStarted() {
+    return !!this._stream;
   }
 
   /**

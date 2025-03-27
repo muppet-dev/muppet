@@ -2,7 +2,16 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "with-agents",
   "main": "src/index.ts",
-  "compatibility_date": "2025-03-26"
+  "compatibility_date": "2025-03-26",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MY_DO",
+        "class_name": "MyDurableObject"
+      }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_classes": ["MyDurableObject"] }]
   // "compatibility_flags": [
   //   "nodejs_compat"
   // ],

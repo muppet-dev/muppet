@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { type Env, Hono } from "hono";
 import {
   type PromptResponseType,
   type ToolResponseType,
@@ -11,8 +11,12 @@ import {
 } from "muppet";
 import z from "zod";
 import { SSEHonoTransport, streamSSE } from "muppet/streaming";
+import { DurableObject } from "cloudflare:workers";
+import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 
 const app = new Hono();
+
+app.get("/", (c) => c.text("Hello World"));
 
 /**
  * This is a simple 'hello world', which takes a name as input and returns a greeting
@@ -119,14 +123,11 @@ const mcpServer = muppet(app, {
 /**
  * For SSE transport
  */
-let transport: SSEHonoTransport | null = null;
-
-const server = new Hono();
+const server = new Hono<{ Bindings: { transport: SSEHonoTransport } }>();
 
 server.get("/sse", async (c) => {
-  c.header("Content-Encoding", "Identity");
   return streamSSE(c, async (stream) => {
-    transport = new SSEHonoTransport("/messages", stream);
+    if (!c.env.transport.hasStarted) c.env.transport.connectWithStream(stream);
 
     const mcp = await mcpServer.catch((err) => {
       console.error(err);
@@ -137,12 +138,14 @@ server.get("/sse", async (c) => {
 
     await bridge({
       mcp,
-      transport,
+      transport: c.env.transport,
     });
   });
 });
 
 server.post("/messages", async (c) => {
+  const transport = c.env.transport;
+
   if (!transport) {
     throw new Error("Transport not initialized");
   }
@@ -156,4 +159,34 @@ server.onError((err, c) => {
   return c.body(err.message, 500);
 });
 
-export default server;
+export class MyDurableObject extends DurableObject<Env> {
+  transport?: SSEHonoTransport;
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+
+    this.transport = new SSEHonoTransport("/messages", ctx.id.name);
+  }
+
+  async fetch(request: Request) {
+    return server.fetch(request, {
+      ...this.env,
+      transport: this.transport,
+    });
+  }
+}
+
+export default {
+  async fetch(
+    request: Request,
+    env: { MY_DO: DurableObjectNamespace<MyDurableObject> },
+    ctx: ExecutionContext,
+  ): Promise<Response> {
+    const id: DurableObjectId = env.MY_DO.idFromName("default");
+
+    // A stub is a client used to invoke methods on the Durable Object
+    const stub = env.MY_DO.get(id);
+
+    return stub.fetch(request);
+  },
+};
