@@ -57,7 +57,7 @@ export function bridge(options: BridgeOptions) {
     }
   };
 
-  transport.start();
+  return transport.start();
 }
 
 export type HandleMessageOptions<

@@ -446,6 +446,7 @@ export async function generateSpecs<
           inputSchema: mergeSchemas(concept.schema) ?? {},
           path,
           method,
+          schema: concept.schema,
         };
       } else if (concept.type === McpPrimitives.PROMPTS) {
         if (!configuration.prompts) {
@@ -457,11 +458,11 @@ export async function generateSpecs<
         const args: PromptConfiguration[string]["arguments"] = [];
         const meragedSchema = mergeSchemas(concept.schema) ?? {};
 
-        for (const arg of Object.keys(meragedSchema)) {
+        for (const arg of Object.keys(meragedSchema.properties ?? {})) {
           args.push({
             name: arg,
             // @ts-expect-error
-            description: meragedSchema.properties?.[arg].description,
+            description: meragedSchema.properties?.[arg]?.description,
             required: meragedSchema.required?.includes(arg) ?? false,
           });
         }
@@ -472,6 +473,7 @@ export async function generateSpecs<
           arguments: args,
           path,
           method,
+          schema: concept.schema,
         };
       } else if (concept.type === McpPrimitives.RESOURCES) {
         if (!configuration.resources) {
@@ -479,10 +481,8 @@ export async function generateSpecs<
         }
 
         configuration.resources[generateKey(method, path)] = {
-          ...configuration.resources[path],
-          [method]: {
-            path,
-          },
+          path,
+          method,
         };
       }
     }

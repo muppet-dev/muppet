@@ -7,13 +7,21 @@
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "pkgroll --watch",
     "build": "pkgroll --minify --clean-dist",
     "test": "vitest"
   },
-  "keywords": ["hono", "mcps", "mcp", "standard-schema", "toolkit"],
+  "keywords": [
+    "hono",
+    "mcps",
+    "mcp",
+    "standard-schema",
+    "toolkit"
+  ],
   "homepage": "https://github.com/muppet-dev/muppet",
   "publishConfig": {
     "access": "public"
@@ -42,13 +50,25 @@
     }
   },
   "exports": {
-    "import": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
-    "require": {
-      "types": "./dist/index.d.cts",
-      "default": "./dist/index.cjs"
+    "./streaming": {
+      "import": {
+        "types": "./dist/streaming.d.ts",
+        "default": "./dist/streaming.js"
+      },
+      "require": {
+        "types": "./dist/streaming.d.cts",
+        "default": "./dist/streaming.cjs"
+      }
     }
   },
   "devDependencies": {
