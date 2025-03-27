@@ -35,10 +35,6 @@ export class SSEHonoTransport implements Transport {
     this.stream = stream;
   }
 
-  get hasStarted() {
-    return !!this._stream;
-  }
-
   /**
    * Handles the initial SSE connection request.
    *

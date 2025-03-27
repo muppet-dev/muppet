@@ -12,7 +12,6 @@ import {
 import z from "zod";
 import { SSEHonoTransport, streamSSE } from "muppet/streaming";
 import { DurableObject } from "cloudflare:workers";
-import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 
 const app = new Hono();
 
@@ -127,7 +126,7 @@ const server = new Hono<{ Bindings: { transport: SSEHonoTransport } }>();
 
 server.get("/sse", async (c) => {
   return streamSSE(c, async (stream) => {
-    if (!c.env.transport.hasStarted) c.env.transport.connectWithStream(stream);
+    c.env.transport.connectWithStream(stream);
 
     const mcp = await mcpServer.catch((err) => {
       console.error(err);
@@ -164,8 +163,7 @@ export class MyDurableObject extends DurableObject<Env> {
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
-
-    this.transport = new SSEHonoTransport("/messages", ctx.id.name);
+    this.transport = new SSEHonoTransport("/messages", ctx.id.toString());
   }
 
   async fetch(request: Request) {
@@ -182,10 +180,15 @@ export default {
     env: { MY_DO: DurableObjectNamespace<MyDurableObject> },
     ctx: ExecutionContext,
   ): Promise<Response> {
-    const id: DurableObjectId = env.MY_DO.idFromName("default");
+    const url = new URL(request.url);
+    const sessionId = url.searchParams.get("sessionId");
 
-    // A stub is a client used to invoke methods on the Durable Object
-    const stub = env.MY_DO.get(id);
+    const namespace = env.MY_DO;
+
+    let stub: DurableObjectStub<MyDurableObject>;
+
+    if (sessionId) stub = namespace.get(namespace.idFromString(sessionId));
+    else stub = namespace.get(namespace.newUniqueId());
 
     return stub.fetch(request);
   },
