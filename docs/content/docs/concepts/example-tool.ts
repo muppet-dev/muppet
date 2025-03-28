@@ -19,6 +19,7 @@ app.post(
     description: "A simple hello world route",
   }),
   mValidator(
+    "json",
     // You can use your favorite schema validator,
     // eg - zod, valibot, arktype, typebox, etc
     z.object({

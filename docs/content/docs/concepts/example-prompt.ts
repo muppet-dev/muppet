@@ -16,6 +16,7 @@ app.post(
   "/simple",
   describePrompt({ name: "Simple Prompt" }),
   mValidator(
+    "json",
     z.object({
       name: z.string(),
     }),

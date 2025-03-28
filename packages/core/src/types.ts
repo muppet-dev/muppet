@@ -8,6 +8,8 @@ import type {
   ImageContentSchema,
   TextContentSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import type { Env, Hono, Schema, ValidationTargets } from "hono";
+import type { BlankEnv, BlankSchema } from "hono/types";
 
 export type HasUndefined<T> = undefined extends T ? true : false;
 
@@ -16,11 +18,60 @@ export type DescribeOptions = {
   description?: string;
 };
 
+export type CompletionFn = (args: {
+  name: string;
+  value: string;
+}) => Promisify<
+  | {
+      /**
+       * An array of completion values. Must not exceed 100 items.
+       */
+      values: string[];
+      /**
+       * The total number of completion options available. This can exceed the number of values actually sent in the response.
+       */
+      total?: number;
+      /**
+       * Indicates whether there are additional completion options beyond those provided in the current response, even if the exact total is unknown.
+       */
+      hasMore?: boolean;
+    }
+  | string[]
+>;
+
 export type ToolHandlerResponse = {
-  resolver?:
+  toJson?:
     | DescribeOptions
     | ((config?: Record<string, unknown>) => Promise<JSONSchema7>);
+  /**
+   * Target for validation
+   */
+  validationTarget?: keyof ValidationTargets;
   type?: McpPrimitivesValue;
+};
+
+export type BaseEnv<
+  E extends Env = BlankEnv,
+  S extends Schema = BlankSchema,
+  P extends string = string,
+> = {
+  Variables: {
+    logger?: Logger;
+    muppet: MuppetConfiguration;
+    specs: ServerConfiguration;
+    app: Hono<E, S, P>;
+  };
+};
+
+export type CreateMuppetOptions<
+  E extends Env = BlankEnv,
+  S extends Schema = BlankSchema,
+  P extends string = string,
+> = {
+  logger?: Logger;
+  specs: ServerConfiguration;
+  config: MuppetConfiguration;
+  app: Hono<E, S, P>;
 };
 
 export type ServerConfiguration = {
@@ -31,14 +82,22 @@ export type ServerConfiguration = {
 
 export type ToolsConfiguration = Record<
   string,
-  DescribeOptions & { inputSchema: JSONSchema7; path: string }
+  DescribeOptions & {
+    inputSchema: JSONSchema7;
+    schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
+    path: string;
+    method: string;
+  }
 >;
 
 export type PromptConfiguration = Record<
   string,
   DescribeOptions & {
     arguments: { name: string; description?: string; required?: boolean }[];
+    schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
     path: string;
+    method: string;
+    completion?: CompletionFn;
   }
 >;
 
@@ -46,6 +105,7 @@ export type ResourceConfiguration = Record<
   string,
   {
     path: string;
+    method: string;
   }
 >;
 
@@ -63,6 +123,7 @@ export type Resource =
       name: string;
       description?: string;
       mimeType?: string;
+      completion?: CompletionFn;
     };
 
 export type ResourceResponse = {
@@ -78,13 +139,18 @@ export type ResourceResponse = {
   blob?: string;
 };
 
+// Path -> Method -> Configuration
 export type ConceptConfiguration = Record<
   string,
-  | (DescribeOptions & {
-      schema?: JSONSchema7;
-      type?: McpPrimitivesValue;
-      path: string;
-    })
+  | Record<
+      string,
+      | (DescribeOptions & {
+          schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
+          type?: McpPrimitivesValue;
+          completion?: CompletionFn;
+        })
+      | undefined
+    >
   | undefined
 >;
 

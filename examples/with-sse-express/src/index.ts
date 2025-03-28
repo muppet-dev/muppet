@@ -7,23 +7,17 @@ import {
   registerResources,
   bridge,
   type ToolResponseType,
-  type Resource,
   type PromptResponseType,
 } from "muppet";
 import z from "zod";
-import pino from "pino";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
-// import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const app = new Hono();
-const logger = pino(
-  pino.destination(
-    "/Users/adityamathur/dev/muppet-dev/muppet/examples/mcp-sdk/dist/main.log",
-  ),
-);
 
-// Define a simple hello world tool
+/**
+ * This is a simple 'hello world', which takes a name as input and returns a greeting
+ */
 app.post(
   "/hello",
   describeTool({
@@ -31,8 +25,9 @@ app.post(
     description: "A simple hello world route",
   }),
   mValidator(
+    "json",
     z.object({
-      name: z.string(),
+      name: z.string().optional(),
     }),
   ),
   (c) => {
@@ -40,12 +35,15 @@ app.post(
     return c.json<ToolResponseType>([
       {
         type: "text",
-        text: `Hello ${payload.name}!`,
+        text: `Hello ${payload.name ?? "World"}!`,
       },
     ]);
   },
 );
 
+/**
+ * Dummy resources, their fetchers are define in the muppet's configuration
+ */
 app.post(
   "/documents",
   registerResources((c) => {
@@ -65,11 +63,14 @@ app.post(
   }),
 );
 
-// Define a simple prompt
+/**
+ * A simple prompt
+ */
 app.post(
   "/simple",
   describePrompt({ name: "Simple Prompt" }),
   mValidator(
+    "json",
     z.object({
       name: z.string(),
     }),
@@ -88,88 +89,71 @@ app.post(
   },
 );
 
-// "E:/dev/muppet/muppet/examples/mcp-sdk/dist/main.log"
-
+// Creating a mcp using muppet
 const mcpServer = muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
-  logger,
   resources: {
-    https: () => {
+    https: (uri) => {
+      if (uri === "https://lorem.ipsum")
+        return [
+          {
+            uri: "task1",
+            text: "This is a fixed task",
+          },
+        ];
+
       return [
         {
           uri: "task1",
-          text: "Task 1",
+          text: "This is dynamic task",
         },
         {
           uri: "task2",
-          text: "Task 2",
-        },
-        {
-          uri: "task3",
-          text: "Task 3",
-        },
-        {
-          uri: "task4",
-          text: "Task 4",
-        },
-        {
-          uri: "task5",
-          text: "Task 5",
+          text: "Could be fetched from a DB",
         },
       ];
     },
   },
 });
 
-/**
- * For Stdio transport
- */
-// mcpServer.then((mcp) => {
-//   if (!mcp) {
-//     throw new Error("MCP not initialized");
-//   }
-
-//   bridge({
-//     mcp,
-//     transport: new StdioServerTransport(),
-//     logger,
-//   });
-// });
-
-/**
- * For SSE transport
- */
 let transport: SSEServerTransport | null = null;
 
-const server = express().use((req, res, next) => {
-  console.log("Request received", req.url);
+const server = express().use((req, _, next) => {
+  console.log(req.method, req.url);
 
   next();
 });
 
-server.get("/", async (req, res) => {
+server.get("/sse", async (_, res) => {
+  // Initialize the transport
   transport = new SSEServerTransport("/messages", res);
 
+  // Getting the mcp instance
   const mcp = await mcpServer;
 
   if (!mcp) {
     throw new Error("MCP not initialized");
   }
 
+  // Bridge the mcp with the transport
   bridge({
     mcp,
     transport,
-    logger,
   });
 });
 
+/**
+ * This is the endpoint where the client will send the messages
+ */
 server.post("/messages", (req, res) => {
   if (transport) {
     transport.handlePostMessage(req, res);
   }
 });
 
-server.listen(3001, () => {
-  console.log("Server started on port 3001");
+const PORT = 3001;
+
+server.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`);
 });

@@ -13,7 +13,8 @@
     "is-ci": "^4.1.0",
     "nano-staged": "^0.8.0",
     "nx": "^20.6.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
   },
   "packageManager": "pnpm@8.14.0+sha256.9cebf61abd83f68177b29484da72da9751390eaad46dfc3072d266bfbb1ba7bf"
 }
