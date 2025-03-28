@@ -19,7 +19,7 @@ import type {
 } from "hono/types";
 import type { JSONSchema7 } from "json-schema";
 import type {
-  AvailableEvents,
+  ClientToServerNotifications,
   BaseEnv,
   CompletionFn,
   ConceptConfiguration,
@@ -118,7 +118,7 @@ export function createMuppetServer<
   mcp.post("/notifications/:event", (c) => {
     c.get("muppet").events?.emit(
       c,
-      `notifications/${c.req.param("event")}` as keyof AvailableEvents,
+      `notifications/${c.req.param("event")}` as keyof ClientToServerNotifications,
       undefined,
     );
 

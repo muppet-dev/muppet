@@ -154,9 +154,25 @@ export type ConceptConfiguration = Record<
   | undefined
 >;
 
-export type AvailableEvents = {
+export type ClientToServerNotifications = {
   "notifications/initialized": undefined;
   "notifications/cancelled": undefined;
+  "notifications/roots/list_changed": undefined;
+};
+
+export type ServerToClientNotifications = {
+  "notifications/cancelled": undefined;
+  "notifications/message": undefined;
+  "notifications/tools/list_changed": undefined;
+  "notifications/prompts/list_changed": undefined;
+  "notifications/resources/updated": undefined;
+  "notifications/resources/list_changed": undefined;
+  "notifications/progress": undefined;
+};
+
+export type SubscriptionEvents = {
+  "resources/unsubscribe": undefined;
+  "resources/subscribe": undefined;
 };
 
 export type Promisify<T> = T | Promise<T>;
@@ -165,7 +181,7 @@ export type MuppetConfiguration = {
   name: string;
   version: string;
   logger?: Logger;
-  events?: Emitter<AvailableEvents>;
+  events?: Emitter<ClientToServerNotifications>;
   resources?: Record<
     string,
     (
