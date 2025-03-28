@@ -546,7 +546,7 @@ export async function generateSpecs<
   return configuration;
 }
 
-function mergeSchemas(
+export function mergeSchemas(
   schema?: { [K in keyof ValidationTargets]?: JSONSchema7 },
 ) {
   let tmp: JSONSchema7 | undefined = undefined;
@@ -570,7 +570,7 @@ function mergeSchemas(
   return tmp;
 }
 
-function generateKey(method: string, path: string) {
+export function generateKey(method: string, path: string) {
   return `${method}:${path}`;
 }
 

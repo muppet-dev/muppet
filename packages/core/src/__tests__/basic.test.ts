@@ -108,7 +108,7 @@ describe("basic", async () => {
     },
   });
 
-  it("initialize", async () => {
+  it("should initialize", async () => {
     const response = await instance?.request("/initialize", {
       method: "POST",
       body: JSON.stringify({
@@ -136,7 +136,7 @@ describe("basic", async () => {
     });
   });
 
-  it("list tools", async () => {
+  it("should list tools", async () => {
     const response = await instance?.request("/tools/list", {
       method: "POST",
       body: JSON.stringify({
@@ -170,7 +170,7 @@ describe("basic", async () => {
     });
   });
 
-  it("call tool", async () => {
+  it("should call tool", async () => {
     const response = await instance?.request("/tools/call", {
       method: "POST",
       body: JSON.stringify({
@@ -201,7 +201,7 @@ describe("basic", async () => {
     });
   });
 
-  it("list prompts", async () => {
+  it("should list prompts", async () => {
     const response = await instance?.request("/prompts/list", {
       method: "POST",
       body: JSON.stringify({
@@ -238,7 +238,7 @@ describe("basic", async () => {
     });
   });
 
-  it("get prompt", async () => {
+  it("should get prompt", async () => {
     const response = await instance?.request("/prompts/get", {
       method: "POST",
       body: JSON.stringify({
@@ -265,7 +265,7 @@ describe("basic", async () => {
     });
   });
 
-  it("list resources", async () => {
+  it("should list resources", async () => {
     const response = await instance?.request("/resources/list", {
       method: "POST",
       body: JSON.stringify({
@@ -293,7 +293,7 @@ describe("basic", async () => {
     });
   });
 
-  it("list template resources", async () => {
+  it("should list template resources", async () => {
     const response = await instance?.request("/resources/templates/list", {
       method: "POST",
       body: JSON.stringify({
@@ -321,7 +321,7 @@ describe("basic", async () => {
     });
   });
 
-  it("read resource", async () => {
+  it("should read the resource", async () => {
     const response = await instance?.request("/resources/read", {
       method: "POST",
       body: JSON.stringify({
@@ -343,7 +343,7 @@ describe("basic", async () => {
     });
   });
 
-  it("auto complete", async () => {
+  it("should respond with completions", async () => {
     const response = await instance?.request("/completion/complete", {
       method: "POST",
       body: JSON.stringify({

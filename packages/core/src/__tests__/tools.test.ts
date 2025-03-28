@@ -36,7 +36,7 @@ describe("tools indepth", async () => {
 
     const instance = await muppet(app, { name: "basic", version: "1.0.0" });
 
-    it("tools/list", async () => {
+    it("should list tools", async () => {
       const response = await instance?.request("/tools/list", {
         method: "POST",
         body: JSON.stringify({
@@ -68,7 +68,7 @@ describe("tools indepth", async () => {
       });
     });
 
-    it("tools/call", async () => {
+    it("should call the tool", async () => {
       const response = await instance?.request("/tools/call", {
         method: "POST",
         body: JSON.stringify({
@@ -127,7 +127,7 @@ describe("tools indepth", async () => {
 
     const instance = await muppet(app, { name: "basic", version: "1.0.0" });
 
-    it("tools/list", async () => {
+    it("should list tools", async () => {
       const response = await instance?.request("/tools/list", {
         method: "POST",
         body: JSON.stringify({
@@ -159,7 +159,7 @@ describe("tools indepth", async () => {
       });
     });
 
-    it("tools/call", async () => {
+    it("should call the tool", async () => {
       const response = await instance?.request("/tools/call", {
         method: "POST",
         body: JSON.stringify({
@@ -223,7 +223,7 @@ describe("tools indepth", async () => {
 
     const instance = await muppet(app, { name: "basic", version: "1.0.0" });
 
-    it("tools/list", async () => {
+    it("should list tools", async () => {
       const response = await instance?.request("/tools/list", {
         method: "POST",
         body: JSON.stringify({
@@ -259,7 +259,7 @@ describe("tools indepth", async () => {
       });
     });
 
-    it("tools/call", async () => {
+    it("should call the tool", async () => {
       const response = await instance?.request("/tools/call", {
         method: "POST",
         body: JSON.stringify({
