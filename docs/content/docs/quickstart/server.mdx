@@ -1,24 +1,34 @@
 ---
 title: For Server Developers
-description: Get started with muppet
+description: Get started building your own server to use in Claude for Desktop and other clients.
 ---
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 
+In this tutorial, we'll build a simple MCP weather server and connect it to a host, Claude for Desktop. We'll start with a basic setup, and then progress to more complex use cases.
+
+This is the same tutorial as the one [here](https://modelcontextprotocol.io/quickstart/server) from the Model Context Protocol documentation. You can compare the two to see how Muppet simplifies the process of building and deploying MCPs.
+
+## What we'll be building
+
+Many LLMs do not currently have the ability to fetch the forecast and severe weather alerts. Let's use MCP to solve that!
+
+We'll build a server that exposes two tools: `get-alerts` and `get-forecast`. Then we'll connect the server to an MCP host (in this case, Claude for Desktop):
+
 <Steps>
 
 <Step>
-1. Create a hono.js project using nodejs template
+1. Create a hono.js project, for simplicity we will use nodejs runtime.
 
    ```bash
-   pnpm create hono@latest my-mcp
+   pnpm create hono@latest my-mcp -i -t nodejs
    ```
 </Step>
 <Step>
-2. Install `muppet` and `@modelcontextprotocol/sdk`
+2. Install the following packages
 
     ```bash
-    pnpm add muppet @modelcontextprotocol/sdk
+    pnpm add muppet @modelcontextprotocol/sdk @hono/standard-validator
     ```
 </Step>
 </Steps>
