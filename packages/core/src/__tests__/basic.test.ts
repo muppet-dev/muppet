@@ -11,104 +11,102 @@ import {
   muppet,
 } from "../index";
 
-const app = new Hono()
-  .post(
-    "/hello",
-    describeTool({
-      name: "Hello World",
-      description: "A simple hello world route",
-    }),
-    mValidator(
-      "json",
-      z.object({
-        name: z.string(),
+describe("basic", async () => {
+  const app = new Hono()
+    .post(
+      "/hello",
+      describeTool({
+        name: "Hello World",
+        description: "A simple hello world route",
       }),
-    ),
-    (c) => {
-      const payload = c.req.valid("json");
-      return c.json<ToolResponseType>([
-        {
-          type: "text",
-          text: `Hello ${payload.name}!`,
-        },
-      ]);
-    },
-  )
-  .post(
-    "/documents",
-    registerResources((c) => {
-      return c.json([
-        {
-          uri: "https://lorem.ipsum",
-          name: "Todo list",
-          mimeType: "text/plain",
-        },
-        {
-          type: "template",
-          uri: "https://lorem.{ending}",
-          name: "Todo list",
-          mimeType: "text/plain",
-        },
-      ]);
-    }),
-  )
-  .post(
-    "/simple",
-    describePrompt({ name: "Simple Prompt" }),
-    mValidator(
-      "json",
-      z.object({
-        name: z.string(),
-      }),
-    ),
-    (c) => {
-      const { name } = c.req.valid("json");
-      return c.json<PromptResponseType>([
-        {
-          role: "user",
-          content: {
+      mValidator(
+        "json",
+        z.object({
+          name: z.string(),
+        }),
+      ),
+      (c) => {
+        const payload = c.req.valid("json");
+        return c.json<ToolResponseType>([
+          {
             type: "text",
-            text: `This is a simple prompt for ${name}`,
+            text: `Hello ${payload.name}!`,
           },
-        },
-      ]);
-    },
-  );
+        ]);
+      },
+    )
+    .post(
+      "/documents",
+      registerResources((c) => {
+        return c.json([
+          {
+            uri: "https://lorem.ipsum",
+            name: "Todo list",
+            mimeType: "text/plain",
+          },
+          {
+            type: "template",
+            uri: "https://lorem.{ending}",
+            name: "Todo list",
+            mimeType: "text/plain",
+          },
+        ]);
+      }),
+    )
+    .post(
+      "/simple",
+      describePrompt({ name: "Simple Prompt" }),
+      mValidator(
+        "json",
+        z.object({
+          name: z.string(),
+        }),
+      ),
+      (c) => {
+        const { name } = c.req.valid("json");
+        return c.json<PromptResponseType>([
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: `This is a simple prompt for ${name}`,
+            },
+          },
+        ]);
+      },
+    );
 
-const serverInfo = {
-  name: "My Muppet",
-  version: "1.0.0",
-};
+  const serverInfo = {
+    name: "My Muppet",
+    version: "1.0.0",
+  };
 
-// Creating a mcp using muppet
-const mcpServer = muppet(app, {
-  ...serverInfo,
-  resources: {
-    https: (uri) => {
-      if (uri === "https://lorem.ipsum")
+  // Creating a mcp using muppet
+  const instance = await muppet(app, {
+    ...serverInfo,
+    resources: {
+      https: (uri) => {
+        if (uri === "https://lorem.ipsum")
+          return [
+            {
+              uri: "task1",
+              text: "This is a fixed task",
+            },
+          ];
+
         return [
           {
             uri: "task1",
-            text: "This is a fixed task",
+            text: "This is dynamic task",
+          },
+          {
+            uri: "task2",
+            text: "Could be fetched from a DB",
           },
         ];
-
-      return [
-        {
-          uri: "task1",
-          text: "This is dynamic task",
-        },
-        {
-          uri: "task2",
-          text: "Could be fetched from a DB",
-        },
-      ];
+      },
     },
-  },
-});
-
-describe("basic", async () => {
-  const instance = await mcpServer;
+  });
 
   it("initialize", async () => {
     const response = await instance?.request("/initialize", {
@@ -366,7 +364,7 @@ describe("basic", async () => {
 
     expect(json).toBeDefined();
     expect(json.result).toMatchObject({
-      values: [],
+      completion: { values: [], total: 0, hasMore: false },
     });
   });
 });
