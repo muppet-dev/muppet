@@ -7,21 +7,13 @@
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "dev": "pkgroll --watch",
     "build": "pkgroll --minify --clean-dist",
     "test": "vitest"
   },
-  "keywords": [
-    "hono",
-    "mcps",
-    "mcp",
-    "standard-schema",
-    "toolkit"
-  ],
+  "keywords": ["hono", "mcps", "mcp", "standard-schema", "toolkit"],
   "homepage": "https://github.com/muppet-dev/muppet",
   "publishConfig": {
     "access": "public"
@@ -72,6 +64,16 @@
       "require": {
         "types": "./dist/streaming.d.cts",
         "default": "./dist/streaming.cjs"
+      }
+    },
+    "./openapi": {
+      "import": {
+        "types": "./dist/openapi.d.ts",
+        "default": "./dist/openapi.js"
+      },
+      "require": {
+        "types": "./dist/openapi.d.cts",
+        "default": "./dist/openapi.cjs"
       }
     }
   },

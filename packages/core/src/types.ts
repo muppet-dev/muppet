@@ -8,7 +8,8 @@ import type {
   ImageContentSchema,
   TextContentSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { ValidationTargets } from "hono";
+import type { Env, Hono, Schema, ValidationTargets } from "hono";
+import type { BlankEnv, BlankSchema } from "hono/types";
 
 export type HasUndefined<T> = undefined extends T ? true : false;
 
@@ -47,6 +48,30 @@ export type ToolHandlerResponse = {
    */
   validationTarget?: keyof ValidationTargets;
   type?: McpPrimitivesValue;
+};
+
+export type BaseEnv<
+  E extends Env = BlankEnv,
+  S extends Schema = BlankSchema,
+  P extends string = string,
+> = {
+  Variables: {
+    logger?: Logger;
+    muppet: MuppetConfiguration;
+    specs: ServerConfiguration;
+    app: Hono<E, S, P>;
+  };
+};
+
+export type CreateMuppetOptions<
+  E extends Env = BlankEnv,
+  S extends Schema = BlankSchema,
+  P extends string = string,
+> = {
+  logger?: Logger;
+  specs: ServerConfiguration;
+  config: MuppetConfiguration;
+  app: Hono<E, S, P>;
 };
 
 export type ServerConfiguration = {

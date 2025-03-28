@@ -18,11 +18,12 @@ import type {
   ValidationTargets,
 } from "hono/types";
 import type { JSONSchema7 } from "json-schema";
-import type { Logger } from "pino";
 import type {
   AvailableEvents,
+  BaseEnv,
   CompletionFn,
   ConceptConfiguration,
+  CreateMuppetOptions,
   DescribeOptions,
   MuppetConfiguration,
   PromptConfiguration,
@@ -48,16 +49,22 @@ export async function muppet<
     return;
   }
 
-  type BaseEnv = {
-    Variables: {
-      logger?: Logger;
-      muppet: MuppetConfiguration;
-      specs: ServerConfiguration;
-      app: Hono<E, S, P>;
-    };
-  };
+  return createMuppetServer({
+    logger,
+    config,
+    specs,
+    app: hono,
+  });
+}
 
-  const mcp = new Hono<BaseEnv>().use(async (c, next) => {
+export function createMuppetServer<
+  E extends Env = BlankEnv,
+  S extends Schema = BlankSchema,
+  P extends string = string,
+>(options: CreateMuppetOptions<E, S, P>) {
+  const { logger, config, specs, app } = options;
+
+  const mcp = new Hono<BaseEnv<E, S, P>>().use(async (c, next) => {
     logger?.info(
       { method: c.req.method, path: c.req.path },
       "Incoming request",
@@ -66,7 +73,7 @@ export async function muppet<
     c.set("logger", logger);
     c.set("muppet", config);
     c.set("specs", specs);
-    c.set("app", hono);
+    c.set("app", app);
 
     await next();
 
@@ -123,7 +130,7 @@ export async function muppet<
   /**
    * Tools router
    */
-  const toolsRouter = new Hono<BaseEnv>().use(async (c, next) => {
+  const toolsRouter = new Hono<BaseEnv<E, S, P>>().use(async (c, next) => {
     if (!(McpPrimitives.TOOLS in c.get("specs"))) {
       throw new Error("No tools available");
     }
@@ -181,7 +188,7 @@ export async function muppet<
   /**
    * Prompt Router
    */
-  const promptsRouter = new Hono<BaseEnv>().use(async (c, next) => {
+  const promptsRouter = new Hono<BaseEnv<E, S, P>>().use(async (c, next) => {
     if (!(McpPrimitives.PROMPTS in c.get("specs"))) {
       throw new Error("No prompts available");
     }
@@ -234,7 +241,7 @@ export async function muppet<
   /**
    * Resource Router
    */
-  const resourcesRouter = new Hono<BaseEnv>().use(async (c, next) => {
+  const resourcesRouter = new Hono<BaseEnv<E, S, P>>().use(async (c, next) => {
     if (!(McpPrimitives.RESOURCES in c.get("specs"))) {
       throw new Error("No resources available");
     }
@@ -243,7 +250,7 @@ export async function muppet<
   });
 
   async function findAllTheResources<T>(
-    c: Context<BaseEnv>,
+    c: Context<BaseEnv<E, S, P>>,
     mapFn: (resource: Resource) => T | undefined,
   ) {
     const responses = await Promise.all(
