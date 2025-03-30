@@ -75,6 +75,9 @@ importers:
         specifier: ^11.0.0
         version: 11.0.0
     devDependencies:
+      '@hono/node-server':
+        specifier: ^1.14.0
+        version: 1.14.0(hono@4.7.4)
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.7.0
@@ -117,6 +120,37 @@ importers:
       zod:
         specifier: ^3.24.2
         version: 3.24.2
+
+  examples/example-forecast:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.14.0
+        version: 1.14.0(hono@4.7.4)
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.7.0
+        version: 1.8.0
+      hono:
+        specifier: ^4.7.4
+        version: 4.7.4
+      muppet:
+        specifier: workspace:*
+        version: link:../../packages/core
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.13.10
+      pkgroll:
+        specifier: ^2.11.2
+        version: 2.11.2(typescript@5.8.2)
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.3
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
 
   examples/with-edge:
     dependencies:
@@ -946,7 +980,6 @@ packages:
       hono: ^4
     dependencies:
       hono: 4.7.4
-    dev: false
 
   /@hono/standard-validator@0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4):
     resolution: {integrity: sha512-mVyv2fpx/o0MNAEhjXhvuVbW3BWTGnf8F4w8ZifztE+TWXjUAKr7KAOZfcDhVrurgVhKw7RbTnEog2beZM6QtQ==}

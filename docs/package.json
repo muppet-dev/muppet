@@ -24,6 +24,7 @@
     "remark-stringify": "^11.0.0"
   },
   "devDependencies": {
+    "@hono/node-server": "^1.14.0",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "@tailwindcss/postcss": "^4.0.14",
     "@types/express": "^5.0.1",

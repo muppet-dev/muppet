@@ -35,4 +35,8 @@ export const describePrompt = describeRoute<
 /**
  * Describe tool's name and description
  */
-export const describeTool = describeRoute(McpPrimitives.TOOLS);
+export const describeTool = describeRoute<
+  DescribeOptions & {
+    resourceType?: "raw" | "json" | "text";
+  }
+>(McpPrimitives.TOOLS);

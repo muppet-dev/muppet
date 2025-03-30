@@ -17,11 +17,10 @@ let transport: SSEServerTransport | null = null;
 
 const server = express().use((req, res, next) => {
   console.log("Request received", req.url);
-
   next();
 });
 
-server.get("/", async (req, res) => {
+server.get("/sse", async (req, res) => {
   transport = new SSEServerTransport("/messages", res);
 
   const mcp = await mcpServer;

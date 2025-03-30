@@ -178,7 +178,7 @@ export function createMuppetServer<
 
       if (Array.isArray(json))
         return c.json({
-          result: { contents: json },
+          result: { content: json },
         });
 
       return c.json({ result: json });

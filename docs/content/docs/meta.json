@@ -4,8 +4,8 @@
         "index",
         "./quickstart",
         "examples",
-        "./tools",
         "./concepts",
-        "./development"
+        "./openapi",
+        "contributing"
     ]
 }

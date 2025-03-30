@@ -177,17 +177,16 @@ export type SubscriptionEvents = {
 
 export type Promisify<T> = T | Promise<T>;
 
+export type ResourceFetcherFn = (
+  uri: string,
+) => Promisify<ResourceResponse[] | { contents: ResourceResponse[] }>;
+
 export type MuppetConfiguration = {
   name: string;
   version: string;
   logger?: Logger;
   events?: Emitter<ClientToServerNotifications>;
-  resources?: Record<
-    string,
-    (
-      uri: string,
-    ) => Promisify<ResourceResponse[] | { contents: ResourceResponse[] }>
-  >;
+  resources?: Record<string, ResourceFetcherFn>;
 };
 
 export type ToolContentResponseType =
@@ -196,7 +195,7 @@ export type ToolContentResponseType =
   | z.infer<typeof EmbeddedResourceSchema>;
 
 export type ToolResponseType =
-  | { contents: ToolContentResponseType[] }
+  | { content: ToolContentResponseType[] }
   | ToolContentResponseType[];
 
 export type PromptContentResponseType = {
