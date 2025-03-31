@@ -2,7 +2,7 @@ import type { Emitter } from "@hono/event-emitter";
 import type { JSONSchema7 } from "json-schema";
 import type { Logger } from "pino";
 import type { McpPrimitivesValue } from "./utils";
-import type z from "zod";
+import type { z } from "zod";
 import type {
   EmbeddedResourceSchema,
   ImageContentSchema,
