@@ -1,24 +1,418 @@
 ---
 title: For Server Developers
-description: Get started with muppet
+description: Get started building your own server to use in Claude for Desktop and other clients.
 ---
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+In this tutorial, we'll build a simple MCP weather server and connect it to a host, Claude for Desktop. We'll start with a basic setup, and then progress to more complex use cases.
+
+This is the same tutorial as the one [here](https://modelcontextprotocol.io/quickstart/server) from the Model Context Protocol documentation. You can compare the two to see how Muppet simplifies the process of building and deploying MCPs.
+
+## What we'll be building
+
+Many LLMs do not currently have the ability to fetch the forecast and severe weather alerts. Let's use MCP to solve that!
+
+We'll build a server that exposes two tools: `get-alerts` and `get-forecast`. Then we'll connect the server to an MCP host (in this case, Claude for Desktop):
+
+{/* TODO: Add images */}
+
+### Core MCP Concepts
+
+MCP servers can provide three main types of capabilities:
+
+1. **Resources**: File-like data that can be read by clients (like API responses or file contents)
+2. **Tools**: Functions that can be called by the LLM (with user approval)
+3. **Prompts**: Pre-written templates that help users accomplish specific tasks
+
+This tutorial will primarily focus on tools.
+
+### Building our server
+
+Let's get started with building our weather server! [You can find the complete code for what we'll be building here.](https://github.com/muppet-dev/muppet/tree/main/examples/example-forecast)
 
 <Steps>
 
 <Step>
-1. Create a hono.js project using nodejs template
+1. Let's create and setup our project
 
    ```bash
-   pnpm create hono@latest my-mcp
+   # Initialize a new hono project, here we are using nodejs but you can use any other template
+   pnpm create hono@latest my-mcp -i -t nodejs -p pnpm
+
+   # Install dependencies
+   pnpm add muppet @modelcontextprotocol/sdk @hono/standard-validator
+
+   # You can use any validation lib that supports Standard Schema
+   pnpm add zod
    ```
 </Step>
 <Step>
-2. Install `muppet` and `@modelcontextprotocol/sdk`
+2. Importing packages
 
-    ```bash
-    pnpm add muppet @modelcontextprotocol/sdk
+    Add these to the top of your `src/index.ts`
+
+    ```ts
+    import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+    import { Hono } from 'hono';
+    import {
+      type ToolResponseType,
+      bridge,
+      describeTool,
+      mValidator,
+      muppet,
+    } from "muppet";
+    import z from "zod";
     ```
 </Step>
+<Step>
+3. Helper functions
+
+    Next, let's add our helper functions for querying and formatting the data from the National Weather Service API
+
+    ```ts
+    const NWS_API_BASE = "https://api.weather.gov";
+    const USER_AGENT = "weather-app/1.0";
+
+    // Helper function for making NWS API requests
+    async function makeNWSRequest<T>(url: string): Promise<T | null> {
+      const headers = {
+        "User-Agent": USER_AGENT,
+        Accept: "application/geo+json",
+      };
+
+      try {
+        const response = await fetch(url, { headers });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return (await response.json()) as T;
+      } catch (error) {
+        console.error("Error making NWS request:", error);
+        return null;
+      }
+    }
+
+    interface AlertFeature {
+      properties: {
+        event?: string;
+        areaDesc?: string;
+        severity?: string;
+        status?: string;
+        headline?: string;
+      };
+    }
+
+    // Format alert data
+    function formatAlert(feature: AlertFeature): string {
+      const props = feature.properties;
+      return [
+        `Event: ${props.event || "Unknown"}`,
+        `Area: ${props.areaDesc || "Unknown"}`,
+        `Severity: ${props.severity || "Unknown"}`,
+        `Status: ${props.status || "Unknown"}`,
+        `Headline: ${props.headline || "No headline"}`,
+        "---",
+      ].join("\n");
+    }
+
+    interface ForecastPeriod {
+      name?: string;
+      temperature?: number;
+      temperatureUnit?: string;
+      windSpeed?: string;
+      windDirection?: string;
+      shortForecast?: string;
+    }
+
+    interface AlertsResponse {
+      features: AlertFeature[];
+    }
+
+    interface PointsResponse {
+      properties: {
+        forecast?: string;
+      };
+    }
+
+    interface ForecastResponse {
+      properties: {
+        periods: ForecastPeriod[];
+      };
+    }
+    ```
+</Step>
+<Step>
+4. Implementing tool execution
+
+    Now let's implement the tool execution logic. This is where we define how our tools will work.
+
+    ```ts
+    const app = new Hono();
+
+    // Define the get-alerts tool
+    app.post(
+      "/get-alerts",
+      describeTool({
+        name: "get-alerts",
+        description: "Get weather alerts for a state",
+      }),
+      mValidator(
+        "json",
+        z.object({
+          state: z
+            .string()
+            .length(2)
+            .describe("Two-letter state code (e.g. CA, NY)"),
+        }),
+      ),
+      async (c) => {
+        const { state } = c.req.valid("json");
+
+        const stateCode = state.toUpperCase();
+        const alertsUrl = `${NWS_API_BASE}/alerts?area=${stateCode}`;
+        const alertsData = await makeNWSRequest<AlertsResponse>(alertsUrl);
+
+        if (!alertsData) {
+          return c.json<ToolResponseType>({
+            content: [
+              {
+                type: "text",
+                text: "Failed to retrieve alerts data",
+              },
+            ],
+          });
+        }
+
+        const features = alertsData.features || [];
+        if (features.length === 0) {
+          return c.json<ToolResponseType>({
+            content: [
+              {
+                type: "text",
+                text: `No active alerts for ${stateCode}`,
+              },
+            ],
+          });
+        }
+
+        const formattedAlerts = features.map(formatAlert);
+        const alertsText = `Active alerts for ${stateCode}:\n\n${formattedAlerts.join("\n")}`;
+
+        return c.json<ToolResponseType>({
+          content: [
+            {
+              type: "text",
+              text: alertsText,
+            },
+          ],
+        });
+      },
+    );
+
+    app.post(
+      "/get-forecast",
+      describeTool({
+        name: "get-forecast",
+        description: "Get weather forecast for a location",
+      }),
+      mValidator(
+        "json",
+        z.object({
+          latitude: z
+            .number()
+            .min(-90)
+            .max(90)
+            .describe("Latitude of the location"),
+          longitude: z
+            .number()
+            .min(-180)
+            .max(180)
+            .describe("Longitude of the location"),
+        }),
+      ),
+      async (c) => {
+        const { latitude, longitude } = c.req.valid("json");
+
+        // Get grid point data
+        const pointsUrl = `${NWS_API_BASE}/points/${latitude.toFixed(4)},${longitude.toFixed(4)}`;
+        const pointsData = await makeNWSRequest<PointsResponse>(pointsUrl);
+
+        if (!pointsData) {
+          return c.json<ToolResponseType>({
+            content: [
+              {
+                type: "text",
+                text: `Failed to retrieve grid point data for coordinates: ${latitude}, ${longitude}. This location may not be supported by the NWS API (only US locations are supported).`,
+              },
+            ],
+          });
+        }
+
+        const forecastUrl = pointsData.properties?.forecast;
+        if (!forecastUrl) {
+          return c.json<ToolResponseType>({
+            content: [
+              {
+                type: "text",
+                text: "Failed to get forecast URL from grid point data",
+              },
+            ],
+          });
+        }
+
+        // Get forecast data
+        const forecastData = await makeNWSRequest<ForecastResponse>(forecastUrl);
+        if (!forecastData) {
+          return c.json<ToolResponseType>({
+            content: [
+              {
+                type: "text",
+                text: "Failed to retrieve forecast data",
+              },
+            ],
+          });
+        }
+
+        const periods = forecastData.properties?.periods || [];
+        if (periods.length === 0) {
+          return c.json<ToolResponseType>({
+            content: [
+              {
+                type: "text",
+                text: "No forecast periods available",
+              },
+            ],
+          });
+        }
+
+        // Format forecast periods
+        const formattedForecast = periods.map((period: ForecastPeriod) =>
+          [
+            `${period.name || "Unknown"}:`,
+            `Temperature: ${period.temperature || "Unknown"}°${period.temperatureUnit || "F"}`,
+            `Wind: ${period.windSpeed || "Unknown"} ${period.windDirection || ""}`,
+            `${period.shortForecast || "No forecast available"}`,
+            "---",
+          ].join("\n"),
+        );
+
+        const forecastText = `Forecast for ${latitude}, ${longitude}:\n\n${formattedForecast.join("\n")}`;
+
+        return c.json<ToolResponseType>({
+          content: [
+            {
+              type: "text",
+              text: forecastText,
+            },
+          ],
+        });
+      },
+    );
+</Step>
+<Step>
+5. Running the server
+
+    Finally, implement the main function to run the server
+
+    ```ts
+    muppet(app, {
+      name: "weather",
+      version: "1.0.0",
+    }).then((mcp) => {
+      if (!mcp) {
+        throw new Error("MCP not initialized");
+      }
+
+      // Bridge the mcp with the transport
+      bridge({
+        mcp,
+        transport: new StdioServerTransport(),
+      });
+    });
+    ```
+
+    Now depending upon the client you can either build the server or run it directly in dev mode. For simplicity we will just build the server. The command for this will depend on the runtime you are using. For example, if you are using nodejs, you can follow these steps
+
+    ```json
+    {
+      "scripts": {
+        "build": "esbuild --bundle --minify --platform=node --outfile=./build/index.js ./src/index.ts",
+      },
+      "dependencies": {
+        "esbuild": "^0.24.2"
+      }
+    }
+    ```
+
+    Let's now test your server from an existing MCP host, Claude for Desktop.
+</Step>
 </Steps>
+
+## Connection with Claude for Desktop
+
+First, make sure you have Claude for Desktop installed. [You can install the latest version
+here.](https://claude.ai/download) If you already have Claude for Desktop, **make sure it's updated to the latest version.**
+
+We'll need to configure Claude for Desktop for whichever MCP servers you want to use. To do this, open your Claude for Desktop App configuration at `~/Library/Application Support/Claude/claude_desktop_config.json` in a text editor. Make sure to create the file if it doesn't exist.
+
+For example, if you have [VS Code](https://code.visualstudio.com/) installed:
+
+<Tabs groupId="os" items={["MacOS/Linux", "Windows"]} persist>
+<Tab value="MacOS/Linux">
+```bash
+code ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+</Tab>
+<Tab value="Windows">
+```powershell
+code $env:AppData\Claude\claude_desktop_config.json
+```
+</Tab>
+</Tabs>
+
+You'll then add your servers in the `mcpServers` key. The MCP UI elements will only show up in Claude for Desktop if at least one server is properly configured.
+
+In this case, we'll add our single weather server like so:
+
+<Tabs groupId="os" items={["MacOS/Linux", "Windows"]} persist>
+<Tab value="MacOS/Linux">
+```json
+{
+    "mcpServers": {
+        "weather": {
+            "command": "node",
+            "args": [
+                "/ABSOLUTE/PATH/TO/PARENT/FOLDER/weather/build/index.js"
+            ]
+        }
+    }
+}
+```
+</Tab>
+<Tab value="Windows">
+```json
+{
+    "mcpServers": {
+        "weather": {
+            "command": "node",
+            "args": [
+                "C:\\PATH\\TO\\PARENT\\FOLDER\\weather\\build\\index.js"
+            ]
+        }
+    }
+}
+```
+</Tab>
+</Tabs>
+
+This tells Claude for Desktop:
+1. There's an MCP server named "weather"
+2. Launch it by running `node /ABSOLUTE/PATH/TO/PARENT/FOLDER/weather/build/index.js`
+
+Save the file, and restart **Claude for Desktop**.
+
+## Test with commands
+
+For this you can follow the instructions [here](https://modelcontextprotocol.io/quickstart/server#test-with-commands) to connect your server to the client.

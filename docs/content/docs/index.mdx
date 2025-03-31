@@ -1,49 +1,64 @@
 ---
 title: Introduction
-description: Get started with muppet
+description: Streamlining Your MCP Development
 ---
 
-Muppet is an open toolkit which standardizes the way you build, test, and deploy your MCPs. If MCP is the USB-C port for AI applications, think of Muppet as the assembly line that produces the USB-C port.
+Muppet is an open-source toolkit designed to simplify the entire lifecycle of your Model Context Protocol (MCP) servers—from development and testing to deployment.
 
-![muppet banner](../../public/banner.png)
+![Muppet Banner](../../public/banner.png)
 
-## Why Muppet?
+## Why Choose Muppet?
 
-Muppet is not a lib, it more of a collection of tools which you can use with [honojs](https://hono.dev/). Instead of reinventing the wheel, Muppet integrates with your hono app, and it just feels like a natural extension of your project.
+Muppet stands out by seamlessly integrating with the [Hono](https://hono.dev/) web framework. This integration allows you to enhance your existing Hono applications with MCP capabilities without the need for extensive rewrites. Muppet functions as a natural extension of Hono, providing an intuitive development experience.
 
-The beauti about Muppet is not just the tools but the fact that you can use honojs with it. This means you can use all the features and capabilities of honojs with Muppet. Eg - Auth, CORS, Payments, Rate Limiting, etc.
+## Key Use Cases
 
-This might not feel like a big deal, if you have a small and simple MCP, but as your project grows, you will start to appreciate the power of Muppet.
+- **Enhance Existing Hono Applications:** Transform your current Hono app into a fully functional MCP server.
+- **Develop New MCP Servers:** Build new MCP servers from scratch using Hono's robust framework.
+- **OpenAPI-Based Development:** Create MCP servers guided by OpenAPI specifications for standardized API design.
 
-It's inspired by the [hono-openapi](https://www.npmjs.com/package/hono-openapi) package, so if you have used it before, you will find Muppet very familiar.
+## Advantages of Muppet
 
-## Get started
+By leveraging Hono's features, Muppet enables you to incorporate essential functionalities into your MCP servers, such as:
 
-Choose the path that best fits your needs:
+- **Authentication:** Secure your MCP endpoints using Hono's authentication middleware.
+- **CORS Management:** Effortlessly handle cross-origin requests.
+- **Rate Limiting:** Protect your resources and ensure fair usage with built-in rate limiting.
+- **Logging:** Monitor requests and responses using Hono's logging capabilities or integrate with third-party logging libraries.
+- **Payment Integration:** Seamlessly incorporate billing and payment processes into your MCP workflows.
 
-#### Quick Starts
+These features become increasingly valuable as your project scales, providing a robust foundation for efficient MCP management.
+
+*Note: Muppet draws inspiration from the [hono-openapi](https://www.npmjs.com/package/hono-openapi) package. If you're familiar with `hono-openapi`, you'll find Muppet's design and philosophy comfortably aligned.*
+
+## Getting Started
+
+Select the path that aligns with your development goals:
+
+### Quick Start Guides
+
 <Cards>
-  <Card title="For Server Developers" href="/docs/quickstart/server" description="Expose data and content from your servers to LLMs" />
-  <Card title="For Users" href="/docs/quickstart/user" description="Create reusable prompt templates and workflows"/>
+  <Card title="For Server Developers" href="/docs/quickstart/server" description="Learn how to expose data and content from your servers to LLMs using Muppet." />
 </Cards>
 
-## Capabilities
+## Core Capabilities
 
-Checkout how you can implement some of the common capabilities with Muppet:
+Explore how to implement common functionalities with Muppet:
 
 <Cards>
-  <Card title="Resources" href="/docs/concepts/resources" description="Expose data and content from your servers to LLMs" />
-  <Card title="Prompts" href="/docs/concepts/prompts" description="Create reusable prompt templates and workflows" />
-  <Card title="Tools" href="/docs/concepts/tools" description="Enable LLMs to perform actions through your server" />
+  <Card title="Resources" href="/docs/concepts/resources" description="Learn to expose data and content from your servers to LLMs." />
+  <Card title="Prompts" href="/docs/concepts/prompts" description="Create reusable prompt templates and workflows." />
+  <Card title="Tools" href="/docs/concepts/tools" description="Enable LLMs to perform actions through your server." />
+  <Card title="Completions" href="/docs/concepts/completions" description="Implement autocompletion features for prompts and resource templates." />
 </Cards>
 
 ## Contributing
 
-Want to contribute? Check out our [Contributing Guide](/docs/development/contributing) to learn how you can help improve Muppet.
+We welcome contributions! Please refer to our [Contributing Guide](/docs/contributing) to learn how you can help improve Muppet.
 
 ## Support and Feedback
 
-Here's how to get help or provide feedback:
+We're here to assist and value your feedback:
 
-- For bug reports and feature requests related to the Muppet SDKs, or documentation, please [create a GitHub issue](https://github.com/muppet-dev)
-- For discussions or Q&A about the MCP specification, use the [specification discussions](https://github.com/orgs/muppet-dev/discussions)
+- **Bug Reports & Feature Requests:** [Create a GitHub issue](https://github.com/muppet-dev) for any issues or suggestions regarding the Muppet SDKs or documentation.
+- **MCP Specification Discussions:** Join the [specification discussions](https://github.com/orgs/muppet-dev/discussions) for general discussions and Q&A about the Model Context Protocol.

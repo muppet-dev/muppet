@@ -1,0 +1,15 @@
+---
+title: Tools
+description: Enable LLMs to perform actions through your server
+---
+
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
+import fs from 'fs';
+
+You can think of tools as a way to enable LLMs to perform actions through your server. Tools are a powerful way to provide LLMs with access to external APIs, allowing them to perform actions and retrieve data from those APIs. These can range from doing simple task like fetching data from an API to more complex tasks like ordering food or booking a flight.
+
+You can learn more about tools in the [MCP documentation](https://modelcontextprotocol.io/docs/concepts/tools).
+
+<DynamicCodeBlock lang="ts" code={fs.readFileSync("./content/docs/concepts/tools/example-tool.ts", "utf-8")} />
+
+`mValidator` supports Standard Schema, which means you can use validation libs which supports Standard Schema like zod, valibot, arktype, typebox, etc.

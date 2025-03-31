@@ -1,0 +1,51 @@
+---
+title: MCP & Bridge
+description: Creating the MCP instance of your app
+---
+
+import { TypeTable } from 'fumadocs-ui/components/type-table';
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
+import fs from 'fs';
+
+## Muppet
+
+Now that you have defined your tools and prompts, you can create the MCP instance of your app. This is done using the `muppet` function. This function takes the `app` instance and an configurtions object as arguments.
+
+<DynamicCodeBlock lang="ts" code={fs.readFileSync("./content/docs/concepts/muppet/example-muppet.ts", "utf-8")} />
+
+The `muppet` function takes the following configurations
+
+<TypeTable
+  type={{
+    name: {
+      description: 'The name of the MCP server. This is used to identify the server by the MCP Client.',
+      type: 'string',
+      required: true,
+    },
+    version: {
+      description: 'The version of the MCP server. This is used to identify the server by the MCP Client.',
+      type: 'string',
+      required: true,
+    },
+    logger: {
+      description: 'A logger instance to use for logging. It uses pino under the hood, so you can use any pino compatible logger.',
+      type: 'number',
+    },
+    resources: {
+      type: "Record<string, ResourceFetcherFn>",
+    },
+    events: {
+      type: "Emitter<ClientToServerNotifications>"
+    }
+  }}
+/>
+
+## Bridge
+
+Now let's create a bridge between the LLM and your server. This is done using the `bridge` function. Think of this like [Bifröst](https://en.wikipedia.org/wiki/Bifr%C3%B6st), it connects the LLM using the [transport layer](/docs/concepts/transports) to your server.
+
+This takes in your muppet instance and the transport layer you wanna use.
+
+<DynamicCodeBlock lang="ts" code={fs.readFileSync("./content/docs/concepts/muppet/example-bridge.ts", "utf-8")} />
+
+You can check out other transport layers [here](/docs/concepts/transports).

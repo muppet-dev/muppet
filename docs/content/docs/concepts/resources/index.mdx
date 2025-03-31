@@ -1,0 +1,41 @@
+---
+title: Resources
+description: Expose data and content from your servers to LLMs
+---
+
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
+import fs from 'fs';
+
+You can think of resources as a way to expose data and content from your servers to LLMs. Resources are a powerful way to provide LLMs with access to structured data, allowing them to make informed decisions and generate more accurate responses.
+
+Resources can be used to expose data from databases, APIs, or any other data source. They can also be used to expose static content, such as HTML pages or JSON files.
+
+You can learn more about resources in the [MCP documentation](https://modelcontextprotocol.io/docs/concepts/resources).
+
+## Dynamic Resources
+
+URIs of these resources are generated dynamically based on the request. This allows you to create resources that can be customized based on the input provided by the LLM.
+
+URIs of these resources typically looks like this `[protocol]:[path]/{[variable]}`, an example of this would be `muppet:forecast/{city}`. In this case, the `city` variable is replaced with the value provided by the LLM.
+
+The protocol is used to identify the fetcher that would be used to get data. You can see the example to define the fetcher [here]().
+
+<DynamicCodeBlock lang="ts" code={fs.readFileSync("./content/docs/concepts/resources/example-dynamic.ts", "utf-8")} />
+
+You can also define completions for dynamic resources. This allows you to provide the LLM with a list of possible values for the variable in the URI. For example, if you have a resource that fetches weather data for a specific city, you can provide a list of cities as completions. Here is an example of how to define completions for a dynamic resource
+
+<DynamicCodeBlock lang="ts" code={fs.readFileSync("./content/docs/concepts/resources/example-completions.ts", "utf-8")} />
+
+## Static Resources
+
+Unlike dynamic resources, static resources have a fixed URI. This means that the resource is always available at the same location, regardless of the input provided by the LLM. The also don't have the `completion` function.
+
+<DynamicCodeBlock lang="ts" code={fs.readFileSync("./content/docs/concepts/resources/example-static.ts", "utf-8")} />
+
+## Defining Resource Fetcher
+
+You can define a fetcher for your resource using the `resources` prop in your `muppet` instance. The fetcher is a function that takes the URI of the resource and returns the data for that resource. The fetcher can be an async function, which allows you to fetch data from APIs or databases.
+
+<DynamicCodeBlock lang="ts" code={fs.readFileSync("./content/docs/concepts/resources/example-fetcher.ts", "utf-8")} />
+
+<Callout>Fetcher may return multiple resources in response. This could be used, for example, to return a list of files inside a directory when the directory is read.</Callout>

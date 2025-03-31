@@ -8,6 +8,8 @@ import type {
   ImageContentSchema,
   TextContentSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import type { Env, Hono, Schema, ValidationTargets } from "hono";
+import type { BlankEnv, BlankSchema } from "hono/types";
 
 export type HasUndefined<T> = undefined extends T ? true : false;
 
@@ -16,11 +18,66 @@ export type DescribeOptions = {
   description?: string;
 };
 
+export type PromptDescribeOptions = DescribeOptions & {
+  completion?: CompletionFn;
+};
+
+export type ToolDescribeOptions = DescribeOptions & {
+  resourceType?: "raw" | "text";
+};
+
+export type CompletionFn = (args: {
+  name: string;
+  value: string;
+}) => Promisify<
+  | {
+      /**
+       * An array of completion values. Must not exceed 100 items.
+       */
+      values: string[];
+      /**
+       * The total number of completion options available. This can exceed the number of values actually sent in the response.
+       */
+      total?: number;
+      /**
+       * Indicates whether there are additional completion options beyond those provided in the current response, even if the exact total is unknown.
+       */
+      hasMore?: boolean;
+    }
+  | string[]
+>;
+
 export type ToolHandlerResponse = {
-  resolver?:
+  toJson?:
     | DescribeOptions
     | ((config?: Record<string, unknown>) => Promise<JSONSchema7>);
+  /**
+   * Target for validation
+   */
+  validationTarget?: keyof ValidationTargets;
   type?: McpPrimitivesValue;
+};
+
+export type BaseEnv<
+  E extends Env = BlankEnv,
+  S extends Schema = BlankSchema,
+  P extends string = string,
+> = {
+  Variables: {
+    muppet: MuppetConfiguration;
+    specs: ServerConfiguration;
+    app: Hono<E, S, P>;
+  };
+};
+
+export type CreateMuppetOptions<
+  E extends Env = BlankEnv,
+  S extends Schema = BlankSchema,
+  P extends string = string,
+> = {
+  specs: ServerConfiguration;
+  config: MuppetConfiguration;
+  app: Hono<E, S, P>;
 };
 
 export type ServerConfiguration = {
@@ -31,14 +88,21 @@ export type ServerConfiguration = {
 
 export type ToolsConfiguration = Record<
   string,
-  DescribeOptions & { inputSchema: JSONSchema7; path: string }
+  ToolDescribeOptions & {
+    inputSchema: JSONSchema7;
+    schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
+    path: string;
+    method: string;
+  }
 >;
 
 export type PromptConfiguration = Record<
   string,
-  DescribeOptions & {
+  PromptDescribeOptions & {
     arguments: { name: string; description?: string; required?: boolean }[];
+    schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
     path: string;
+    method: string;
   }
 >;
 
@@ -46,6 +110,7 @@ export type ResourceConfiguration = Record<
   string,
   {
     path: string;
+    method: string;
   }
 >;
 
@@ -63,6 +128,7 @@ export type Resource =
       name: string;
       description?: string;
       mimeType?: string;
+      completion?: CompletionFn;
     };
 
 export type ResourceResponse = {
@@ -78,34 +144,55 @@ export type ResourceResponse = {
   blob?: string;
 };
 
+// Path -> Method -> Configuration
 export type ConceptConfiguration = Record<
   string,
-  | (DescribeOptions & {
-      schema?: JSONSchema7;
-      type?: McpPrimitivesValue;
-      path: string;
-    })
+  | Record<
+      string,
+      | (DescribeOptions & {
+          schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
+          type?: McpPrimitivesValue;
+          completion?: CompletionFn;
+        })
+      | undefined
+    >
   | undefined
 >;
 
-export type AvailableEvents = {
+export type ClientToServerNotifications = {
   "notifications/initialized": undefined;
   "notifications/cancelled": undefined;
+  "notifications/roots/list_changed": undefined;
+};
+
+export type ServerToClientNotifications = {
+  "notifications/cancelled": undefined;
+  "notifications/message": undefined;
+  "notifications/tools/list_changed": undefined;
+  "notifications/prompts/list_changed": undefined;
+  "notifications/resources/updated": undefined;
+  "notifications/resources/list_changed": undefined;
+  "notifications/progress": undefined;
+};
+
+export type SubscriptionEvents = {
+  "resources/unsubscribe": undefined;
+  "resources/subscribe": undefined;
 };
 
 export type Promisify<T> = T | Promise<T>;
+
+export type ResourceFetcherFn = (
+  uri: string,
+) => Promisify<ResourceResponse[] | { contents: ResourceResponse[] }>;
 
 export type MuppetConfiguration = {
   name: string;
   version: string;
   logger?: Logger;
-  events?: Emitter<AvailableEvents>;
-  resources?: Record<
-    string,
-    (
-      uri: string,
-    ) => Promisify<ResourceResponse[] | { contents: ResourceResponse[] }>
-  >;
+  events?: Emitter<ClientToServerNotifications>;
+  resources?: Record<string, ResourceFetcherFn>;
+  symbols?: unknown[];
 };
 
 export type ToolContentResponseType =
@@ -114,7 +201,7 @@ export type ToolContentResponseType =
   | z.infer<typeof EmbeddedResourceSchema>;
 
 export type ToolResponseType =
-  | { contents: ToolContentResponseType[] }
+  | { content: ToolContentResponseType[] }
   | ToolContentResponseType[];
 
 export type PromptContentResponseType = {
