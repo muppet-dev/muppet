@@ -1,6 +1,7 @@
 import { Hono } from "hono";
-import { describeRoute } from "hono-openapi";
-import { muppet } from "muppet";
+import { describeRoute, uniqueSymbol } from "hono-openapi";
+import { muppet, mValidator } from "muppet";
+import z from "zod";
 
 const app = new Hono();
 
@@ -10,6 +11,8 @@ app.get(
     summary: "Get all products",
     description: "This endpoint returns a list of all products.",
   }),
+  // TODO: Change this with the hono-openapi validator
+  mValidator("query", z.object({ page: z.number().optional() })),
   async (c) => {
     return c.json([
       {
@@ -29,4 +32,6 @@ app.get(
 muppet(app, {
   name: "hono-openapi-mcp",
   version: "0.0.1",
+  // By passing this, muppet will scan the hono-openapi middlewares too
+  symbols: [uniqueSymbol],
 });
