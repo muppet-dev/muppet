@@ -38,19 +38,9 @@ export async function muppet<
   S extends Schema = BlankSchema,
   P extends string = string,
 >(hono: Hono<E, S, P>, config: MuppetConfiguration) {
-  const { logger } = config;
-
-  let specs: ServerConfiguration;
-
-  try {
-    specs = await generateSpecs(hono);
-  } catch (err) {
-    logger?.error({ err }, "Failed to generate server configuration");
-    return;
-  }
+  const specs = await generateSpecs(hono, config.symbols);
 
   return createMuppetServer({
-    logger,
     config,
     specs,
     app: hono,
@@ -62,22 +52,21 @@ export function createMuppetServer<
   S extends Schema = BlankSchema,
   P extends string = string,
 >(options: CreateMuppetOptions<E, S, P>) {
-  const { logger, config, specs, app } = options;
+  const { config, specs, app } = options;
 
   const mcp = new Hono<BaseEnv<E, S, P>>().use(async (c, next) => {
-    logger?.info(
+    config.logger?.info(
       { method: c.req.method, path: c.req.path },
       "Incoming request",
     );
 
-    c.set("logger", logger);
     c.set("muppet", config);
     c.set("specs", specs);
     c.set("app", app);
 
     await next();
 
-    logger?.info({ status: c.res.status }, "Outgoing response");
+    config.logger?.info({ status: c.res.status }, "Outgoing response");
   });
 
   // Init request
@@ -395,7 +384,7 @@ export function createMuppetServer<
   );
 
   mcp.notFound((c) => {
-    c.get("logger")?.info("Method not found");
+    c.get("muppet").logger?.info("Method not found");
 
     return c.json({
       error: {
@@ -406,7 +395,7 @@ export function createMuppetServer<
   });
 
   mcp.onError((err, c) => {
-    c.get("logger")?.error({ err }, "Internal error");
+    c.get("muppet").logger?.error({ err }, "Internal error");
 
     return c.json({
       error: {
@@ -427,14 +416,20 @@ export async function generateSpecs<
   E extends Env = BlankEnv,
   S extends Schema = BlankSchema,
   P extends string = string,
->(hono: Hono<E, S, P>) {
+>(hono: Hono<E, S, P>, symbols: unknown[] = []) {
   const concepts: ConceptConfiguration = {};
 
-  for (const route of hono.routes) {
-    if (!(uniqueSymbol in route.handler)) continue;
+  // biome-ignore lint/suspicious/noExplicitAny: Need this for the type
+  const _symbols: any[] = [...symbols, uniqueSymbol];
 
+  for (const route of hono.routes) {
+    const uSymbol = _symbols.find((symbol) => symbol in route.handler);
+
+    if (!uSymbol) continue;
+
+    // @ts-expect-error
     const { validationTarget, toJson, type } = route.handler[
-      uniqueSymbol
+      uSymbol
     ] as ToolHandlerResponse;
 
     let result: DescribeOptions | JSONSchema7;

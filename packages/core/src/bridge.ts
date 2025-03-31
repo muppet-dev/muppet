@@ -15,7 +15,7 @@ export type BridgeOptions<
   /**
    * The Muppet app instance
    */
-  mcp: Hono<E, S, P>;
+  mcp: Hono<E, S, P> | Promise<Hono<E, S, P>>;
   /**
    * The transport that will be used to send and receive messages
    */
@@ -37,7 +37,7 @@ export function bridge(options: BridgeOptions) {
 
   transport.onmessage = async (message) => {
     const payload = await handleMessage({
-      mcp: app,
+      mcp: await app,
       message,
       logger,
     });

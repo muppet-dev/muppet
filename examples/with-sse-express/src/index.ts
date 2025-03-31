@@ -90,7 +90,7 @@ app.post(
 );
 
 // Creating a mcp using muppet
-const mcpServer = muppet(app, {
+const mcp = muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
   resources: {
@@ -128,13 +128,6 @@ const server = express().use((req, _, next) => {
 server.get("/sse", async (_, res) => {
   // Initialize the transport
   transport = new SSEServerTransport("/messages", res);
-
-  // Getting the mcp instance
-  const mcp = await mcpServer;
-
-  if (!mcp) {
-    throw new Error("MCP not initialized");
-  }
 
   // Bridge the mcp with the transport
   bridge({

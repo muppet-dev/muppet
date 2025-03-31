@@ -241,18 +241,14 @@ app.post(
   },
 );
 
-// Creating a mcp using muppet
-muppet(app, {
+const mcp = muppet(app, {
   name: "weather",
   version: "1.0.0",
-}).then((mcp) => {
-  if (!mcp) {
-    throw new Error("MCP not initialized");
-  }
+});
 
-  // Bridge the mcp with the transport
-  bridge({
-    mcp,
-    transport: new StdioServerTransport(),
-  });
+// Bridge the mcp with the transport
+bridge({
+  // Creating a mcp using muppet
+  mcp,
+  transport: new StdioServerTransport(),
 });

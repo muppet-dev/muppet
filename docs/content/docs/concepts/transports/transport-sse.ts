@@ -8,7 +8,7 @@ const app = new Hono();
 // Define your tools, prompts, and resources here
 // ...
 
-const mcpServer = muppet(app, {
+const mcp = muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
 });
@@ -22,12 +22,6 @@ const server = express().use((req, res, next) => {
 
 server.get("/sse", async (req, res) => {
   transport = new SSEServerTransport("/messages", res);
-
-  const mcp = await mcpServer;
-
-  if (!mcp) {
-    throw new Error("MCP not initialized");
-  }
 
   bridge({
     mcp,

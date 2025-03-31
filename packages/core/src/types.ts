@@ -56,7 +56,6 @@ export type BaseEnv<
   P extends string = string,
 > = {
   Variables: {
-    logger?: Logger;
     muppet: MuppetConfiguration;
     specs: ServerConfiguration;
     app: Hono<E, S, P>;
@@ -68,7 +67,6 @@ export type CreateMuppetOptions<
   S extends Schema = BlankSchema,
   P extends string = string,
 > = {
-  logger?: Logger;
   specs: ServerConfiguration;
   config: MuppetConfiguration;
   app: Hono<E, S, P>;
@@ -187,6 +185,7 @@ export type MuppetConfiguration = {
   logger?: Logger;
   events?: Emitter<ClientToServerNotifications>;
   resources?: Record<string, ResourceFetcherFn>;
+  symbols?: unknown[];
 };
 
 export type ToolContentResponseType =
