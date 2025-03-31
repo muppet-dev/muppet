@@ -192,7 +192,7 @@ describe("basic", async () => {
 
     expect(json).toBeDefined();
     expect(json.result).toMatchObject({
-      contents: [
+      content: [
         {
           type: "text",
           text: "Hello muppet!",

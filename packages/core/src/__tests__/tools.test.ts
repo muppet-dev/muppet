@@ -90,7 +90,7 @@ describe("tools indepth", async () => {
 
       expect(json).toBeDefined();
       expect(json.result).toMatchObject({
-        contents: [
+        content: [
           {
             type: "text",
             text: "Hello World!",
@@ -180,7 +180,7 @@ describe("tools indepth", async () => {
 
       expect(json).toBeDefined();
       expect(json.result).toMatchObject({
-        contents: [
+        content: [
           {
             type: "text",
             text: "Hello World!",
@@ -281,7 +281,7 @@ describe("tools indepth", async () => {
 
       expect(json).toBeDefined();
       expect(json.result).toMatchObject({
-        contents: [
+        content: [
           {
             type: "text",
             text: "Hello World!",
