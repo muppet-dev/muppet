@@ -7,13 +7,21 @@
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "pkgroll --watch",
     "build": "pkgroll --minify --clean-dist",
     "test": "vitest"
   },
-  "keywords": ["hono", "mcps", "mcp", "standard-schema", "toolkit"],
+  "keywords": [
+    "hono",
+    "mcps",
+    "mcp",
+    "standard-schema",
+    "toolkit"
+  ],
   "homepage": "https://github.com/muppet-dev/muppet",
   "publishConfig": {
     "access": "public"
@@ -32,6 +40,7 @@
     "@standard-community/standard-json": "^0.1.2",
     "@standard-schema/spec": "^1.0.0",
     "hono": "^4.6.13",
+    "lodash-es": "^4.17.21",
     "openapi-types": "^12.1.3"
   },
   "peerDependenciesMeta": {
@@ -39,6 +48,9 @@
       "optional": true
     },
     "hono": {
+      "optional": true
+    },
+    "lodash-es": {
       "optional": true
     },
     "openapi-types": {
@@ -80,6 +92,7 @@
   "devDependencies": {
     "@hono/event-emitter": "^2.0.0",
     "@types/json-schema": "^7.0.15",
+    "@types/lodash-es": "^4.17.12",
     "pino": "^9.6.0",
     "pkgroll": "^2.5.1",
     "zod": "^3.24.2"

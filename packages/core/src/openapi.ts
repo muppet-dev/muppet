@@ -4,6 +4,7 @@ import { createMuppetServer, generateKey, mergeSchemas } from "./muppet";
 import { Hono } from "hono";
 import { proxy } from "hono/proxy";
 import type { JSONSchema7 } from "json-schema";
+import { get as _get } from "lodash-es";
 
 export function fromOpenAPI(specs: OpenAPIV3_1.Document) {
   const config: MuppetConfiguration = {
@@ -30,12 +31,22 @@ export function fromOpenAPI(specs: OpenAPIV3_1.Document) {
             } else if ("schema" in parameter) {
               if (!parameter.schema) continue;
 
+              let pSchema = parameter.schema;
+
+              if ("$ref" in parameter.schema) {
+                const path = parameter.schema.$ref
+                  .split("/")
+                  .slice(1)
+                  .join(".");
+                pSchema = _get(specs, path);
+              }
+
               schema[parameter.in] = {
                 type: "object",
                 // @ts-expect-error
                 properties: {
                   ...(schema[parameter.in]?.properties ?? {}),
-                  [parameter.name]: parameter.schema,
+                  [parameter.name]: pSchema,
                 },
                 // @ts-expect-error
                 required: [
