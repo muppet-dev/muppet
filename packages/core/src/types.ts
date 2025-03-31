@@ -18,6 +18,14 @@ export type DescribeOptions = {
   description?: string;
 };
 
+export type PromptDescribeOptions = DescribeOptions & {
+  completion?: CompletionFn;
+};
+
+export type ToolDescribeOptions = DescribeOptions & {
+  resourceType?: "raw" | "text";
+};
+
 export type CompletionFn = (args: {
   name: string;
   value: string;
@@ -80,7 +88,7 @@ export type ServerConfiguration = {
 
 export type ToolsConfiguration = Record<
   string,
-  DescribeOptions & {
+  ToolDescribeOptions & {
     inputSchema: JSONSchema7;
     schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
     path: string;
@@ -90,12 +98,11 @@ export type ToolsConfiguration = Record<
 
 export type PromptConfiguration = Record<
   string,
-  DescribeOptions & {
+  PromptDescribeOptions & {
     arguments: { name: string; description?: string; required?: boolean }[];
     schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
     path: string;
     method: string;
-    completion?: CompletionFn;
   }
 >;
 

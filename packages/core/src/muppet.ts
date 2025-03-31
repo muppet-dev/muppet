@@ -147,7 +147,7 @@ export function createMuppetServer<
     async (c) => {
       const { params } = c.req.valid("json");
 
-      const { path, method, schema } =
+      const { path, method, resourceType, schema } =
         c.get("specs").tools?.[params.name] ?? {};
 
       if (!path || !method) {
@@ -164,6 +164,19 @@ export function createMuppetServer<
       );
 
       const json = await res.json();
+
+      if (resourceType === "text") {
+        return c.json({
+          result: {
+            content: [
+              {
+                type: "text",
+                text: typeof json === "string" ? json : JSON.stringify(json),
+              },
+            ],
+          },
+        });
+      }
 
       if (Array.isArray(json))
         return c.json({

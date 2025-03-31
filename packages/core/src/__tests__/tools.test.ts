@@ -8,7 +8,7 @@ import {
   muppet,
 } from "../index";
 
-describe("tools indepth", async () => {
+describe("tools", async () => {
   describe("with json validation", async () => {
     const describe = {
       name: "json",

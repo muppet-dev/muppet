@@ -1,5 +1,9 @@
 import type { MiddlewareHandler } from "hono/types";
-import type { CompletionFn, DescribeOptions } from "./types.js";
+import type {
+  DescribeOptions,
+  PromptDescribeOptions,
+  ToolDescribeOptions,
+} from "./types.js";
 import {
   McpPrimitives,
   type McpPrimitivesValue,
@@ -26,17 +30,13 @@ function describeRoute<T extends DescribeOptions = DescribeOptions>(
 /**
  * Describe prompt's name and description
  */
-export const describePrompt = describeRoute<
-  DescribeOptions & {
-    completion?: CompletionFn;
-  }
->(McpPrimitives.PROMPTS);
+export const describePrompt = describeRoute<PromptDescribeOptions>(
+  McpPrimitives.PROMPTS,
+);
 
 /**
  * Describe tool's name and description
  */
-export const describeTool = describeRoute<
-  DescribeOptions & {
-    resourceType?: "raw" | "json" | "text";
-  }
->(McpPrimitives.TOOLS);
+export const describeTool = describeRoute<ToolDescribeOptions>(
+  McpPrimitives.TOOLS,
+);
