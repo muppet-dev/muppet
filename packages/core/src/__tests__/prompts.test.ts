@@ -2,13 +2,13 @@ import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
 import z from "zod";
 import {
-  describeTool,
+  describePrompt,
   mValidator,
-  type ToolResponseType,
+  type PromptResponseType,
   muppet,
 } from "../index";
 
-describe("tools", async () => {
+describe("prompts", async () => {
   describe("with json validation", async () => {
     const about = {
       name: "json",
@@ -17,7 +17,7 @@ describe("tools", async () => {
 
     const app = new Hono().post(
       "/",
-      describeTool(about),
+      describePrompt(about),
       mValidator(
         "json",
         z.object({
@@ -25,10 +25,13 @@ describe("tools", async () => {
         }),
       ),
       (c) => {
-        return c.json<ToolResponseType>([
+        return c.json<PromptResponseType>([
           {
-            type: "text",
-            text: "Hello World!",
+            role: "user",
+            content: {
+              type: "text",
+              text: "Hello World!",
+            },
           },
         ]);
       },
@@ -36,13 +39,13 @@ describe("tools", async () => {
 
     const instance = await muppet(app, { name: "basic", version: "1.0.0" });
 
-    it("should list tools", async () => {
-      const response = await instance?.request("/tools/list", {
+    it("should list prompts", async () => {
+      const response = await instance?.request("/prompts/list", {
         method: "POST",
         body: JSON.stringify({
           jsonrpc: "2.0",
           id: 1,
-          method: "tools/list",
+          method: "prompts/list",
           params: {},
         }),
         headers: {
@@ -54,27 +57,17 @@ describe("tools", async () => {
 
       expect(json).toBeDefined();
       expect(json.result).toMatchObject({
-        tools: [
-          {
-            ...about,
-            inputSchema: {
-              type: "object",
-              properties: { search: { type: "string" } },
-              additionalProperties: false,
-              $schema: "http://json-schema.org/draft-07/schema#",
-            },
-          },
-        ],
+        prompts: [about],
       });
     });
 
-    it("should call the tool", async () => {
-      const response = await instance?.request("/tools/call", {
+    it("should get the prompt", async () => {
+      const response = await instance?.request("/prompts/get", {
         method: "POST",
         body: JSON.stringify({
           jsonrpc: "2.0",
           id: 2,
-          method: "tools/call",
+          method: "prompts/get",
           params: {
             _meta: { progressToken: 0 },
             name: about.name,
@@ -90,10 +83,14 @@ describe("tools", async () => {
 
       expect(json).toBeDefined();
       expect(json.result).toMatchObject({
-        content: [
+        description: about.description,
+        messages: [
           {
-            type: "text",
-            text: "Hello World!",
+            role: "user",
+            content: {
+              type: "text",
+              text: "Hello World!",
+            },
           },
         ],
       });
@@ -108,7 +105,7 @@ describe("tools", async () => {
 
     const app = new Hono().get(
       "/",
-      describeTool(about),
+      describePrompt(about),
       mValidator(
         "query",
         z.object({
@@ -116,10 +113,13 @@ describe("tools", async () => {
         }),
       ),
       (c) => {
-        return c.json<ToolResponseType>([
+        return c.json<PromptResponseType>([
           {
-            type: "text",
-            text: "Hello World!",
+            role: "user",
+            content: {
+              type: "text",
+              text: "Hello World!",
+            },
           },
         ]);
       },
@@ -127,13 +127,13 @@ describe("tools", async () => {
 
     const instance = await muppet(app, { name: "basic", version: "1.0.0" });
 
-    it("should list tools", async () => {
-      const response = await instance?.request("/tools/list", {
+    it("should list prompts", async () => {
+      const response = await instance?.request("/prompts/list", {
         method: "POST",
         body: JSON.stringify({
           jsonrpc: "2.0",
           id: 1,
-          method: "tools/list",
+          method: "prompts/list",
           params: {},
         }),
         headers: {
@@ -145,27 +145,17 @@ describe("tools", async () => {
 
       expect(json).toBeDefined();
       expect(json.result).toMatchObject({
-        tools: [
-          {
-            ...about,
-            inputSchema: {
-              type: "object",
-              properties: { search: { type: "string" } },
-              additionalProperties: false,
-              $schema: "http://json-schema.org/draft-07/schema#",
-            },
-          },
-        ],
+        prompts: [about],
       });
     });
 
-    it("should call the tool", async () => {
-      const response = await instance?.request("/tools/call", {
+    it("should get the prompt", async () => {
+      const response = await instance?.request("/prompts/get", {
         method: "POST",
         body: JSON.stringify({
           jsonrpc: "2.0",
           id: 2,
-          method: "tools/call",
+          method: "prompts/get",
           params: {
             _meta: { progressToken: 0 },
             name: about.name,
@@ -180,10 +170,14 @@ describe("tools", async () => {
 
       expect(json).toBeDefined();
       expect(json.result).toMatchObject({
-        content: [
+        description: about.description,
+        messages: [
           {
-            type: "text",
-            text: "Hello World!",
+            role: "user",
+            content: {
+              type: "text",
+              text: "Hello World!",
+            },
           },
         ],
       });
@@ -198,7 +192,7 @@ describe("tools", async () => {
 
     const app = new Hono().post(
       "/",
-      describeTool(about),
+      describePrompt(about),
       mValidator(
         "query",
         z.object({
@@ -212,10 +206,13 @@ describe("tools", async () => {
         }),
       ),
       (c) => {
-        return c.json<ToolResponseType>([
+        return c.json<PromptResponseType>([
           {
-            type: "text",
-            text: "Hello World!",
+            role: "user",
+            content: {
+              type: "text",
+              text: "Hello World!",
+            },
           },
         ]);
       },
@@ -223,13 +220,13 @@ describe("tools", async () => {
 
     const instance = await muppet(app, { name: "basic", version: "1.0.0" });
 
-    it("should list tools", async () => {
-      const response = await instance?.request("/tools/list", {
+    it("should list prompts", async () => {
+      const response = await instance?.request("/prompts/list", {
         method: "POST",
         body: JSON.stringify({
           jsonrpc: "2.0",
           id: 1,
-          method: "tools/list",
+          method: "prompts/list",
           params: {},
         }),
         headers: {
@@ -241,31 +238,17 @@ describe("tools", async () => {
 
       expect(json).toBeDefined();
       expect(json.result).toMatchObject({
-        tools: [
-          {
-            ...about,
-            inputSchema: {
-              type: "object",
-              properties: {
-                search: { type: "string" },
-                name: { type: "string" },
-              },
-              required: ["name"],
-              additionalProperties: false,
-              $schema: "http://json-schema.org/draft-07/schema#",
-            },
-          },
-        ],
+        prompts: [about],
       });
     });
 
-    it("should call the tool", async () => {
-      const response = await instance?.request("/tools/call", {
+    it("should get the prompt", async () => {
+      const response = await instance?.request("/prompts/get", {
         method: "POST",
         body: JSON.stringify({
           jsonrpc: "2.0",
           id: 2,
-          method: "tools/call",
+          method: "prompts/get",
           params: {
             _meta: { progressToken: 0 },
             name: about.name,
@@ -281,10 +264,14 @@ describe("tools", async () => {
 
       expect(json).toBeDefined();
       expect(json.result).toMatchObject({
-        content: [
+        description: about.description,
+        messages: [
           {
-            type: "text",
-            text: "Hello World!",
+            role: "user",
+            content: {
+              type: "text",
+              text: "Hello World!",
+            },
           },
         ],
       });
