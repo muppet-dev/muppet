@@ -1,0 +1,13 @@
+---
+title: Using Hono OpenAPI
+description: Reuse your hono-openapi validators to generate MCP servers
+---
+
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
+import fs from 'fs';
+
+<Callout>This requires `hono-openapi@0.5.0` or later to work. You can checkout the project [here](https://github.com/rhinobase/hono-openapi)</Callout>
+
+`muppet` and `hono-openapi` both uses a validator supporting [Standard Schema](https://standardschema.dev/) to understand the structure of the request and response. Now with latest release of `hono-openapi`, you can use the same validator inplace of the one provided by `muppet` to generate the MCP server. This is useful if you are already using `hono-openapi` in your project and want to reuse the same validators for your MCP server.
+
+<DynamicCodeBlock lang="ts" code={fs.readFileSync("./content/docs/openapi/hono-openapi/example.ts", "utf-8")} />
