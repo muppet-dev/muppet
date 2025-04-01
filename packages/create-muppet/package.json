@@ -3,14 +3,21 @@
   "description": "Create a Muppet application from starter templates.",
   "version": "0.1.0",
   "license": "MIT",
-  "bin": "./dist/index.js",
-  "files": ["dist"],
+  "bin": "./bin",
+  "files": [
+    "bin"
+  ],
   "scripts": {
-    "bin": "node ./dist/index.js",
-    "build": "pkgroll --minify --clean-dist",
-    "test": "vitest"
+    "bin": "./bin",
+    "build": "tsx ./build.ts"
   },
-  "keywords": ["mcps", "mcp", "create", "muppet", "template"],
+  "keywords": [
+    "mcps",
+    "mcp",
+    "create",
+    "muppet",
+    "template"
+  ],
   "homepage": "https://github.com/muppet-dev/muppet",
   "publishConfig": {
     "access": "public"
@@ -28,8 +35,9 @@
     "@types/node": "^22.13.15",
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
+    "esbuild": "^0.25.2",
+    "execa": "^9.5.2",
     "giget": "^2.0.0",
-    "nanospinner": "^1.2.2",
-    "pkgroll": "^2.5.1"
+    "tsx": "^4.19.3"
   }
 }
