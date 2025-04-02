@@ -1,5 +1,5 @@
 {
-  "name": "with-sse",
+  "name": "bun-sse",
   "version": "0.0.1",
   "bin": "./dist/index.js",
   "scripts": {
