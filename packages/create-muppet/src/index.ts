@@ -16,8 +16,23 @@ import {
 } from "./utils";
 import { execa } from "execa";
 
+const TRANSPORT_LAYERS = {
+  STDIO: "stdio",
+  CLASSIC_SSE: "sse",
+  HONO_SSE: "hono-sse",
+};
+
+const RUNTIMES_BY_TRANSPORT_LAYER = {
+  [TRANSPORT_LAYERS.STDIO]: ["bun", "deno", "nodejs"],
+  [TRANSPORT_LAYERS.CLASSIC_SSE]: ["bun", "nodejs"],
+  [TRANSPORT_LAYERS.HONO_SSE]: ["bun", "cloudflare-workers", "deno", "nodejs"],
+};
+
+const ALL_UNIQUE_TEMPLATES = Array.from(
+  new Set(Object.values(RUNTIMES_BY_TRANSPORT_LAYER).flat()),
+);
+
 const IS_CURRENT_DIR_REGEX = /^(\.\/|\.\\|\.)$/;
-const TEMPLATES = ["cloudflare-workers", "bun", "deno", "nodejs"];
 const PROJECT_NAME = new RegExp(/%%PROJECT_NAME.*%%/g);
 const WRANGLER_FILES = ["wrangler.toml", "wrangler.json", "wrangler.jsonc"];
 const COMPATIBILITY_DATE_TOML = /compatibility_date\s*=\s*"\d{4}-\d{2}-\d{2}"/;
@@ -50,8 +65,13 @@ program
     ),
   )
   .addOption(
-    new Option("-t, --template <template>", "Template to use").choices(
-      TEMPLATES,
+    new Option("-t, --transport <transport>", "Transport to use").choices(
+      ALL_UNIQUE_TEMPLATES,
+    ),
+  )
+  .addOption(
+    new Option("-r, --runtime <template>", "Runtime to use").choices(
+      ALL_UNIQUE_TEMPLATES,
     ),
   )
   .addOption(new Option("-o, --offline", "Use offline mode").default(false))
@@ -61,7 +81,8 @@ type ArgOptions = {
   pm?: string;
   offline: boolean;
   install?: boolean;
-  template?: string;
+  transport?: string;
+  runtime?: string;
 };
 
 async function main(
@@ -71,7 +92,7 @@ async function main(
 ) {
   console.log(chalk.gray(`${command.name()} version ${command.version()}`));
 
-  const { install, pm, offline, template: templateArg } = options;
+  const { install, pm, offline, transport, runtime } = options;
 
   let target: string;
   if (targetDir) {
@@ -94,21 +115,40 @@ async function main(
     projectName = path.basename(target);
   }
 
-  const templateName =
-    templateArg ||
+  const allTransportLayers = Object.values(TRANSPORT_LAYERS);
+
+  const transportName =
+    transport ||
     (await select({
-      message: "Which template do you want to use?",
-      options: TEMPLATES.map((template) => ({
+      message: "Which transport layer do you want to use?",
+      options: allTransportLayers.map((template) => ({
         value: template,
       })),
     }).then((answer) => String(answer)));
 
-  if (!templateName) {
-    throw new Error("No template selected");
+  if (!transportName) {
+    throw new Error("No transport layer was selected!");
   }
 
-  if (!TEMPLATES.includes(templateName)) {
-    throw new Error(`Invalid template selected: ${templateName}`);
+  if (!allTransportLayers.includes(transportName)) {
+    throw new Error(`Invalid template selected: ${transportName}`);
+  }
+
+  const runtimeName =
+    runtime ||
+    (await select({
+      message: "Which template do you want to use?",
+      options: RUNTIMES_BY_TRANSPORT_LAYER[transportName].map((template) => ({
+        value: template,
+      })),
+    }).then((answer) => String(answer)));
+
+  if (!runtimeName) {
+    throw new Error("No runtime was selected!");
+  }
+
+  if (!RUNTIMES_BY_TRANSPORT_LAYER[transportName].includes(runtimeName)) {
+    throw new Error(`Invalid template selected: ${runtimeName}`);
   }
 
   if (fs.existsSync(target)) {
@@ -131,7 +171,7 @@ async function main(
   let packageManager = pm ?? "npm";
 
   try {
-    if (!EXCLUDE_TEMPLATES.includes(templateName)) {
+    if (!EXCLUDE_TEMPLATES.includes(runtimeName)) {
       let installDeps = false;
 
       const installedPackageManagerNames = await Promise.all(
@@ -190,11 +230,14 @@ async function main(
     const spin = spinner();
     spin.start("Cloning the template");
 
-    await downloadTemplate(`gh:muppet-dev/muppet/examples/${templateName}`, {
-      dir: targetDirectoryPath,
-      offline,
-      force: true,
-    });
+    await downloadTemplate(
+      `gh:muppet-dev/muppet/examples/${runtimeName}-${transportName}`,
+      {
+        dir: targetDirectoryPath,
+        offline,
+        force: true,
+      },
+    );
 
     spin.stop("Cloned", 200);
 
@@ -222,7 +265,7 @@ async function main(
       exit(procExit);
     }
 
-    if (templateName === "cloudflare") {
+    if (runtimeName === "cloudflare-workers") {
       for (const filename of WRANGLER_FILES) {
         try {
           const wranglerPath = path.join(targetDirectoryPath, filename);
@@ -248,7 +291,7 @@ async function main(
     }
   } catch (e) {
     throw new Error(
-      `Error running hook for ${templateName}: ${
+      `Error running hook for ${runtimeName}-${transportName}: ${
         e instanceof Error ? e.message : e
       }`,
     );
