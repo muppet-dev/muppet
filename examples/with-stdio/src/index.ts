@@ -1,73 +1,23 @@
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Hono } from "hono";
 import {
-  muppet,
-  describeTool,
-  describePrompt,
-  mValidator,
-  registerResources,
-  bridge,
   type ToolResponseType,
-  type PromptResponseType,
+  bridge,
+  describeTool,
+  mValidator,
+  muppet,
 } from "muppet";
 import z from "zod";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const app = new Hono();
 
-/**
- * This is a simple 'hello world', which takes a name as input and returns a greeting
- */
 app.post(
   "/hello",
   describeTool({
-    name: "Hello World",
-    description: "A simple hello world route",
+    name: "Greet User with Hello",
+    description:
+      "This will take in the name of the user and greet them. eg. Hello John",
   }),
-  mValidator(
-    "json",
-    z.object({
-      name: z.string(),
-    }),
-  ),
-  (c) => {
-    const payload = c.req.valid("json");
-    return c.json<ToolResponseType>([
-      {
-        type: "text",
-        text: `Hello ${payload.name}!`,
-      },
-    ]);
-  },
-);
-
-/**
- * Dummy resources, their fetchers are define in the muppet's configuration
- */
-app.post(
-  "/documents",
-  registerResources((c) => {
-    return c.json([
-      {
-        uri: "https://lorem.ipsum",
-        name: "Todo list",
-        mimeType: "text/plain",
-      },
-      {
-        type: "template",
-        uri: "https://lorem.{ending}",
-        name: "Todo list",
-        mimeType: "text/plain",
-      },
-    ]);
-  }),
-);
-
-/**
- * A simple prompt
- */
-app.post(
-  "/simple",
-  describePrompt({ name: "Simple Prompt" }),
   mValidator(
     "json",
     z.object({
@@ -76,13 +26,10 @@ app.post(
   ),
   (c) => {
     const { name } = c.req.valid("json");
-    return c.json<PromptResponseType>([
+    return c.json<ToolResponseType>([
       {
-        role: "user",
-        content: {
-          type: "text",
-          text: `This is a simple prompt for ${name}`,
-        },
+        type: "text",
+        text: `Hello ${name}!`,
       },
     ]);
   },
@@ -92,28 +39,6 @@ app.post(
 const mcp = muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
-  resources: {
-    https: (uri) => {
-      if (uri === "https://lorem.ipsum")
-        return [
-          {
-            uri: "task1",
-            text: "This is a fixed task",
-          },
-        ];
-
-      return [
-        {
-          uri: "task1",
-          text: "This is dynamic task",
-        },
-        {
-          uri: "task2",
-          text: "Could be fetched from a DB",
-        },
-      ];
-    },
-  },
 });
 
 bridge({
