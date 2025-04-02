@@ -1,0 +1,77 @@
+---
+title: Basic Setup
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+Setting up Muppet is super easy. We can set up the project, write code, develop with a local server, and deploy quickly. The same code will work on any runtime, just with different entry points. Let's look at the basic usage of Muppet.
+
+## Starter
+
+Starter templates are available for each platform. Use the following `create-muppet` command.
+
+```bash tab="npm"
+npm create muppet@latest my-app
+```
+
+```bash tab="yarn"
+yarn create muppet my-app
+```
+
+```bash tab="pnpm"
+pnpm create muppet@latest my-app
+```
+
+```bash tab="bun"
+bun create muppet@latest my-app
+```
+
+```bash tab="deno"
+deno init --npm muppet@latest my-app
+```
+
+Then you will be asked which transport layer and runtime you would like to use. The template will be pulled into `my-app`, so go to it and install the dependencies.
+
+```bash tab="npm"
+cd my-app
+npm i
+```
+
+```bash tab="yarn"
+cd my-app
+yarn
+```
+
+```bash tab="pnpm"
+cd my-app
+pnpm i
+```
+
+```bash tab="bun"
+cd my-app
+bun i
+```
+
+Once the package installation is complete, run the following command to start up a local server.
+
+```bash tab="npm"
+npm run dev
+```
+
+```bash tab="yarn"
+yarn dev
+```
+
+```bash tab="pnpm"
+pnpm dev
+```
+
+```bash tab="bun"
+bun run dev
+```
+
+## Next Step
+
+Now that you have a basic setup, you can start writing your code. The starter template will have a basic structure for you to follow. You can start by modifying the `src/index.ts` file and adding your own tools.
+
+The final `export default` parts may vary from runtime to runtime, but all of the application code will run the same code everywhere.

@@ -48,7 +48,6 @@ let transport: SSEHonoTransport | null = null;
 const server = new Hono();
 
 server.get("/sse", (c) => {
-  c.header("Content-Encoding", "Identity");
   return streamSSE(c, async (stream) => {
     transport = new SSEHonoTransport("/messages");
     transport.connectWithStream(stream);
