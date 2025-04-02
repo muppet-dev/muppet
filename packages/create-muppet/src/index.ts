@@ -17,7 +17,7 @@ import {
 import { execa } from "execa";
 
 const IS_CURRENT_DIR_REGEX = /^(\.\/|\.\\|\.)$/;
-const TEMPLATES = ["nodejs"];
+const TEMPLATES = ["cloudflare-workers", "bun", "deno", "nodejs"];
 const PROJECT_NAME = new RegExp(/%%PROJECT_NAME.*%%/g);
 const WRANGLER_FILES = ["wrangler.toml", "wrangler.json", "wrangler.jsonc"];
 const COMPATIBILITY_DATE_TOML = /compatibility_date\s*=\s*"\d{4}-\d{2}-\d{2}"/;
