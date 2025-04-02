@@ -1,4 +1,4 @@
-import { confirm, select, spinner, text } from "@clack/prompts";
+import * as p from "@clack/prompts";
 import chalk from "chalk";
 import { type Command, Option, program } from "commander";
 import { exec } from "node:child_process";
@@ -71,18 +71,16 @@ async function main(
   options: ArgOptions,
   command: Command,
 ) {
-  console.log(chalk.gray(`${command.name()} version ${command.version()}`));
+  p.intro(`${command.name()} v${command.version()}`);
 
   const { install, pm, offline, transport, runtime } = options;
 
   let target: string;
   if (targetDir) {
     target = targetDir;
-    console.log(
-      `${chalk.bold(`${chalk.green("✔")} Using target directory`)} … ${target}`,
-    );
+    p.note(`Using target directory - ${target}`);
   } else {
-    const answer = await text({
+    const answer = await p.text({
       message: "Target directory",
       defaultValue: "my-app",
     });
@@ -98,10 +96,12 @@ async function main(
 
   const transportName =
     transport ||
-    (await select({
-      message: "Which transport layer do you want to use?",
-      options: Object.values(TRANSPORT_LAYERS),
-    }).then((answer) => String(answer)));
+    (await p
+      .select({
+        message: "Which transport layer do you want to use?",
+        options: Object.values(TRANSPORT_LAYERS),
+      })
+      .then((answer) => String(answer)));
 
   if (!transportName) {
     throw new Error("No transport layer was selected!");
@@ -113,12 +113,14 @@ async function main(
 
   const runtimeName =
     runtime ||
-    (await select({
-      message: "Which template do you want to use?",
-      options: RUNTIMES_BY_TRANSPORT_LAYER[transportName].map((template) => ({
-        value: template,
-      })),
-    }).then((answer) => String(answer)));
+    (await p
+      .select({
+        message: "Which runtime do you want to use?",
+        options: RUNTIMES_BY_TRANSPORT_LAYER[transportName].map((template) => ({
+          value: template,
+        })),
+      })
+      .then((answer) => String(answer)));
 
   if (!runtimeName) {
     throw new Error("No runtime was selected!");
@@ -130,7 +132,7 @@ async function main(
 
   if (fs.existsSync(target)) {
     if (fs.readdirSync(target).length > 0) {
-      const response = await confirm({
+      const response = await p.confirm({
         message: "Directory not empty. Continue?",
         initialValue: false,
       });
@@ -148,12 +150,12 @@ async function main(
     // Default package manager
     const packageManager = await figureOutPackageManager({
       runtime: runtimeName,
-      pm: pm ?? "npm",
+      pm,
       install,
     });
 
-    const spin = spinner();
-    spin.start("Cloning the template");
+    let spin = p.spinner({ indicator: "timer" });
+    spin.start("Cloning project files");
 
     await download({
       runtime: runtimeName,
@@ -162,7 +164,7 @@ async function main(
       offline,
     });
 
-    spin.stop("Cloned", 200);
+    spin.stop("Cloned project files");
 
     chdir(targetDirectoryPath);
 
@@ -174,8 +176,8 @@ async function main(
         exit(1);
       }
 
-      const iSpin = spinner();
-      iSpin.start("Installing project dependencies");
+      spin = p.spinner({ indicator: "timer" });
+      spin.start("Installing project dependencies");
       const proc = exec(installCommand);
 
       const procExit: number = await new Promise((res) => {
@@ -183,9 +185,9 @@ async function main(
       });
 
       if (procExit === 0) {
-        iSpin.stop("Success");
+        spin.stop("Installed project dependencies");
       } else {
-        iSpin.stop("Failed to install project dependencies");
+        spin.stop("Failed to install project dependencies", 2);
         exit(procExit);
       }
     }
@@ -203,8 +205,8 @@ async function main(
     );
   }
 
-  console.log(chalk.green(`🎉 ${chalk.bold("Copied project files")}`));
-  console.log(chalk.gray("Get started with:"), chalk.bold(`cd ${target}`));
+  p.note(`Get started with - ${chalk.bold(`cd ${target}`)}`);
+  p.outro(`${chalk.bold("Muppet project created successfully!")}`);
   process.exit(0);
 }
 

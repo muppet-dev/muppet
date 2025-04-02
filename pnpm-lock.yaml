@@ -124,6 +124,65 @@ importers:
         specifier: ^3.24.2
         version: 3.24.2
 
+  examples/bun-sse:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.7.0
+        version: 1.8.0
+      hono:
+        specifier: ^4.7.4
+        version: 4.7.4
+      muppet:
+        specifier: workspace:*
+        version: link:../../packages/core
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.13.15
+      pkgroll:
+        specifier: ^2.11.2
+        version: 2.11.2(typescript@5.8.2)
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.3
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
+
+  examples/cloudflare-workers-sse:
+    dependencies:
+      '@hono/standard-validator':
+        specifier: ^0.1.2
+        version: 0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4)
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.8.0
+        version: 1.8.0
+      '@valibot/to-json-schema':
+        specifier: ^1.0.0
+        version: 1.0.0(valibot@1.0.0)
+      effect:
+        specifier: ^3.14.2
+        version: 3.14.2
+      hono:
+        specifier: 4.7.4
+        version: 4.7.4
+      muppet:
+        specifier: workspace:*
+        version: link:../../packages/core
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20250214.0
+        version: 4.20250321.0
+      wrangler:
+        specifier: ^4.4.0
+        version: 4.4.1(@cloudflare/workers-types@4.20250321.0)
+
   examples/example-forecast:
     dependencies:
       '@hono/node-server':
@@ -155,45 +214,14 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
 
-  examples/with-edge:
-    dependencies:
-      '@hono/standard-validator':
-        specifier: ^0.1.2
-        version: 0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4)
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.8.0
-        version: 1.8.0
-      '@valibot/to-json-schema':
-        specifier: ^1.0.0
-        version: 1.0.0(valibot@1.0.0)
-      effect:
-        specifier: ^3.14.2
-        version: 3.14.2
-      hono:
-        specifier: 4.7.4
-        version: 4.7.4
-      muppet:
-        specifier: workspace:*
-        version: link:../../packages/core
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.2
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^4.20250214.0
-        version: 4.20250321.0
-      wrangler:
-        specifier: ^4.4.0
-        version: 4.4.1(@cloudflare/workers-types@4.20250321.0)
-
-  examples/with-sse:
+  examples/nodejs-sse:
     dependencies:
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.14.0(hono@4.7.4)
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
-        version: 1.7.0
+        version: 1.8.0
       hono:
         specifier: ^4.7.4
         version: 4.7.4
@@ -206,7 +234,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^22.13.10
-        version: 22.13.10
+        version: 22.13.15
       pkgroll:
         specifier: ^2.11.2
         version: 2.11.2(typescript@5.8.2)
@@ -569,6 +597,7 @@ packages:
     cpu: [ppc64]
     os: [aix]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/aix-ppc64@0.25.2:
@@ -595,6 +624,7 @@ packages:
     cpu: [arm64]
     os: [android]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/android-arm64@0.25.2:
@@ -621,6 +651,7 @@ packages:
     cpu: [arm]
     os: [android]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/android-arm@0.25.2:
@@ -647,6 +678,7 @@ packages:
     cpu: [x64]
     os: [android]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/android-x64@0.25.2:
@@ -673,6 +705,7 @@ packages:
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/darwin-arm64@0.25.2:
@@ -699,6 +732,7 @@ packages:
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/darwin-x64@0.25.2:
@@ -725,6 +759,7 @@ packages:
     cpu: [arm64]
     os: [freebsd]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/freebsd-arm64@0.25.2:
@@ -751,6 +786,7 @@ packages:
     cpu: [x64]
     os: [freebsd]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/freebsd-x64@0.25.2:
@@ -777,6 +813,7 @@ packages:
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/linux-arm64@0.25.2:
@@ -803,6 +840,7 @@ packages:
     cpu: [arm]
     os: [linux]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/linux-arm@0.25.2:
@@ -829,6 +867,7 @@ packages:
     cpu: [ia32]
     os: [linux]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/linux-ia32@0.25.2:
@@ -855,6 +894,7 @@ packages:
     cpu: [loong64]
     os: [linux]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/linux-loong64@0.25.2:
@@ -881,6 +921,7 @@ packages:
     cpu: [mips64el]
     os: [linux]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/linux-mips64el@0.25.2:
@@ -907,6 +948,7 @@ packages:
     cpu: [ppc64]
     os: [linux]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/linux-ppc64@0.25.2:
@@ -933,6 +975,7 @@ packages:
     cpu: [riscv64]
     os: [linux]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/linux-riscv64@0.25.2:
@@ -959,6 +1002,7 @@ packages:
     cpu: [s390x]
     os: [linux]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/linux-s390x@0.25.2:
@@ -985,6 +1029,7 @@ packages:
     cpu: [x64]
     os: [linux]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/linux-x64@0.25.2:
@@ -1011,6 +1056,7 @@ packages:
     cpu: [arm64]
     os: [netbsd]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/netbsd-arm64@0.25.2:
@@ -1037,6 +1083,7 @@ packages:
     cpu: [x64]
     os: [netbsd]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/netbsd-x64@0.25.2:
@@ -1063,6 +1110,7 @@ packages:
     cpu: [arm64]
     os: [openbsd]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/openbsd-arm64@0.25.2:
@@ -1089,6 +1137,7 @@ packages:
     cpu: [x64]
     os: [openbsd]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/openbsd-x64@0.25.2:
@@ -1115,6 +1164,7 @@ packages:
     cpu: [x64]
     os: [sunos]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/sunos-x64@0.25.2:
@@ -1141,6 +1191,7 @@ packages:
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/win32-arm64@0.25.2:
@@ -1167,6 +1218,7 @@ packages:
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/win32-ia32@0.25.2:
@@ -1193,6 +1245,7 @@ packages:
     cpu: [x64]
     os: [win32]
     requiresBuild: true
+    dev: false
     optional: true
 
   /@esbuild/win32-x64@0.25.2:
@@ -2864,13 +2917,13 @@ packages:
     resolution: {integrity: sha512-fB3Zu92ucau0iQ0JMCFQE7b/dv8Ot07NI3KaZIkIUNXq82k4eBAqUaneXfleGY9JWskeS9y+u0nXMyspcuQrCg==}
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 22.13.10
+      '@types/node': 22.13.15
     dev: true
 
   /@types/connect@3.4.38:
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
     dependencies:
-      '@types/node': 22.13.10
+      '@types/node': 22.13.15
     dev: true
 
   /@types/debug@4.1.12:
@@ -2891,7 +2944,7 @@ packages:
   /@types/express-serve-static-core@5.0.6:
     resolution: {integrity: sha512-3xhRnjJPkULekpSzgtoNYYcTWgEZkp4myc+Saevii5JPnHNvHMRlBSHDbs7Bh1iPPoVTERHEZXyhyLbMEsExsA==}
     dependencies:
-      '@types/node': 22.13.10
+      '@types/node': 22.13.15
       '@types/qs': 6.9.18
       '@types/range-parser': 1.2.7
       '@types/send': 0.17.4
@@ -2976,14 +3029,14 @@ packages:
     resolution: {integrity: sha512-x2EM6TJOybec7c52BX0ZspPodMsQUd5L6PRwOunVyVUhXiBSKf3AezDL8Dgvgt5o0UfKNfuA0eMLr2wLT4AiBA==}
     dependencies:
       '@types/mime': 1.3.5
-      '@types/node': 22.13.10
+      '@types/node': 22.13.15
     dev: true
 
   /@types/serve-static@1.15.7:
     resolution: {integrity: sha512-W8Ym+h8nhuRwaKPaDw34QUkwsGi6Rc4yYqvKFo5rm2FUEhCFbzVWrxXUxuKK8TASjWsysJY0nsmNCGhCOIsrOw==}
     dependencies:
       '@types/http-errors': 2.0.4
-      '@types/node': 22.13.10
+      '@types/node': 22.13.15
       '@types/send': 0.17.4
     dev: true
 
@@ -3838,6 +3891,7 @@ packages:
       '@esbuild/win32-arm64': 0.25.1
       '@esbuild/win32-ia32': 0.25.1
       '@esbuild/win32-x64': 0.25.1
+    dev: false
 
   /esbuild@0.25.2:
     resolution: {integrity: sha512-16854zccKPnC+toMywC+uKNeYSv+/eXkevRAfwRD/G9Cleq66m8XFIrigkbvauLLlCfDL45Q2cWegSg53gGBnQ==}
@@ -7018,7 +7072,7 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
     dependencies:
-      esbuild: 0.25.1
+      esbuild: 0.25.2
       get-tsconfig: 4.10.0
     optionalDependencies:
       fsevents: 2.3.3

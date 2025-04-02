@@ -47,6 +47,10 @@ export function cleanup(options: CleanupOptions) {
     const packageJson = fs.readFileSync(packageJsonPath, "utf-8");
 
     const packageJsonParsed = JSON.parse(packageJson);
+
+    packageJsonParsed.nx = undefined;
+    packageJsonParsed.dependencies.muppet = "latest";
+
     const newPackageJson = {
       name,
       ...packageJsonParsed,
