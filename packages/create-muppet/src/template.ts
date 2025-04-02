@@ -1,17 +1,25 @@
 import { downloadTemplate } from "giget";
 
 export const TRANSPORT_LAYERS = {
-  STDIO: "stdio",
-  CLASSIC_SSE: "sse",
-  HONO_SSE: "hono-sse",
+  SSE: { label: "The SSE Transport from muppet (recommended)", value: "sse" },
+  STDIO: {
+    label: "The Stdio Transport from @modelcontextprotocol/sdk",
+    value: "stdio",
+  },
+  CLASSIC_SSE: {
+    label: "The SSE Transport from @modelcontextprotocol/sdk",
+    value: "classic-sse",
+  },
 };
 
-export const ALL_TRANSPORT_LAYERS = Object.values(TRANSPORT_LAYERS);
+export const ALL_TRANSPORT_LAYERS = Object.values(TRANSPORT_LAYERS).map(
+  (t) => t.value,
+);
 
 export const RUNTIMES_BY_TRANSPORT_LAYER = {
-  [TRANSPORT_LAYERS.STDIO]: ["bun", "deno", "nodejs"],
-  [TRANSPORT_LAYERS.CLASSIC_SSE]: ["bun", "nodejs"],
-  [TRANSPORT_LAYERS.HONO_SSE]: ["bun", "cloudflare-workers", "deno", "nodejs"],
+  [TRANSPORT_LAYERS.STDIO.value]: ["bun", "deno", "nodejs"],
+  [TRANSPORT_LAYERS.CLASSIC_SSE.value]: ["express.js"],
+  [TRANSPORT_LAYERS.SSE.value]: ["bun", "cloudflare-workers", "deno", "nodejs"],
 };
 
 export const ALL_UNIQUE_TEMPLATES = Array.from(
@@ -24,11 +32,12 @@ const TEMPLATE_NAME_MAP: Record<string, string | undefined> = {
   "deno:stdio": "deno-stdio",
   "nodejs:stdio": "with-stdio",
   // Classic SSE Templates
-  "bun:sse": "with-sse",
-  "nodejs:sse": "with-sse",
+  "nodejs:classic-sse": "with-sse-express",
   // Hono SSE Templates
-  "bun:hono-sse": "hono-with-sse",
-  "deno:hono-sse": "hono-with-sse",
+  "bun:sse": "bun-sse",
+  "cloudflare-workers:sse": "cloudflare-workers-sse",
+  "deno:sse": "deno-sse",
+  "nodejs:sse": "nodejs-sse",
 };
 
 type DownloadOptions = {

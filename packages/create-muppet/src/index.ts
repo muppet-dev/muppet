@@ -12,6 +12,7 @@ import {
   ALL_TRANSPORT_LAYERS,
   ALL_UNIQUE_TEMPLATES,
   RUNTIMES_BY_TRANSPORT_LAYER,
+  TRANSPORT_LAYERS,
   download,
 } from "./template";
 import {
@@ -99,9 +100,7 @@ async function main(
     transport ||
     (await select({
       message: "Which transport layer do you want to use?",
-      options: ALL_TRANSPORT_LAYERS.map((template) => ({
-        value: template,
-      })),
+      options: Object.values(TRANSPORT_LAYERS),
     }).then((answer) => String(answer)));
 
   if (!transportName) {
