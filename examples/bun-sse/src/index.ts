@@ -11,9 +11,6 @@ import z from "zod";
 
 const app = new Hono();
 
-/**
- * This is a simple 'hello world', which takes a name as input and returns a greeting
- */
 app.post(
   "/hello",
   describeTool({
