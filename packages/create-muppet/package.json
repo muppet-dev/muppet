@@ -4,20 +4,12 @@
   "version": "0.1.0",
   "license": "MIT",
   "bin": "./bin",
-  "files": [
-    "bin"
-  ],
+  "files": ["bin"],
   "scripts": {
     "bin": "./bin",
     "build": "tsx ./build.ts"
   },
-  "keywords": [
-    "mcps",
-    "mcp",
-    "create",
-    "muppet",
-    "template"
-  ],
+  "keywords": ["mcps", "mcp", "create", "muppet", "template"],
   "homepage": "https://github.com/muppet-dev/muppet",
   "publishConfig": {
     "access": "public"
@@ -25,7 +17,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/muppet-dev/muppet.git",
-    "directory": "packages/core"
+    "directory": "packages/create-muppet"
   },
   "bugs": {
     "url": "https://github.com/muppet-dev/muppet/issues"

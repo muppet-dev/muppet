@@ -116,9 +116,9 @@ async function main(
     (await p
       .select({
         message: "Which runtime do you want to use?",
-        options: RUNTIMES_BY_TRANSPORT_LAYER[transportName].map((template) => ({
-          value: template,
-        })),
+        options: RUNTIMES_BY_TRANSPORT_LAYER[transportName].map((template) =>
+          typeof template === "string" ? { value: template } : template,
+        ),
       })
       .then((answer) => String(answer)));
 
