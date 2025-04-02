@@ -1,4 +1,7 @@
 node_modules
 dist
 .nx
+
 bin
+
+deno.lock

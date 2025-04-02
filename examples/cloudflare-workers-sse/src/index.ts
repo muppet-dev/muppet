@@ -47,7 +47,7 @@ const mcp = muppet(app, {
  */
 const server = new Hono<{ Bindings: { transport: SSEHonoTransport } }>();
 
-server.get("/sse", async (c) => {
+server.get("/sse", (c) => {
   return streamSSE(c, async (stream) => {
     c.env.transport.connectWithStream(stream);
 
