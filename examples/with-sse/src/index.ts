@@ -1,17 +1,14 @@
+import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import {
-  type PromptResponseType,
   type ToolResponseType,
-  describePrompt,
+  bridge,
   describeTool,
   mValidator,
   muppet,
-  registerResources,
-  bridge,
 } from "muppet";
-import z from "zod";
 import { SSEHonoTransport, streamSSE } from "muppet/streaming";
-import { serve } from "@hono/node-server";
+import z from "zod";
 
 const app = new Hono();
 
@@ -21,54 +18,10 @@ const app = new Hono();
 app.post(
   "/hello",
   describeTool({
-    name: "Hello World",
-    description: "A simple hello world route",
+    name: "Greet User with Hello",
+    description:
+      "This will take in the name of the user and greet them. eg. Hello John",
   }),
-  mValidator(
-    "json",
-    z.object({
-      name: z.string(),
-    }),
-  ),
-  (c) => {
-    const payload = c.req.valid("json");
-    return c.json<ToolResponseType>([
-      {
-        type: "text",
-        text: `Hello ${payload.name}!`,
-      },
-    ]);
-  },
-);
-
-/**
- * Dummy resources, their fetchers are define in the muppet's configuration
- */
-app.post(
-  "/documents",
-  registerResources((c) => {
-    return c.json([
-      {
-        uri: "https://lorem.ipsum",
-        name: "Todo list",
-        mimeType: "text/plain",
-      },
-      {
-        type: "template",
-        uri: "https://lorem.{ending}",
-        name: "Todo list",
-        mimeType: "text/plain",
-      },
-    ]);
-  }),
-);
-
-/**
- * A simple prompt
- */
-app.post(
-  "/simple",
-  describePrompt({ name: "Simple Prompt" }),
   mValidator(
     "json",
     z.object({
@@ -77,44 +30,18 @@ app.post(
   ),
   (c) => {
     const { name } = c.req.valid("json");
-    return c.json<PromptResponseType>([
+    return c.json<ToolResponseType>([
       {
-        role: "user",
-        content: {
-          type: "text",
-          text: `This is a simple prompt for ${name}`,
-        },
+        type: "text",
+        text: `Hello ${name}!`,
       },
     ]);
   },
 );
 
-// Creating a mcp using muppet
 const mcp = muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
-  resources: {
-    https: (uri) => {
-      if (uri === "https://lorem.ipsum")
-        return [
-          {
-            uri: "task1",
-            text: "This is a fixed task",
-          },
-        ];
-
-      return [
-        {
-          uri: "task1",
-          text: "This is dynamic task",
-        },
-        {
-          uri: "task2",
-          text: "Could be fetched from a DB",
-        },
-      ];
-    },
-  },
 });
 
 /**
@@ -151,12 +78,7 @@ server.onError((err, c) => {
   return c.body(err.message, 500);
 });
 
-serve(
-  {
-    fetch: server.fetch,
-    port: 3001,
-  },
-  (info) => {
-    console.log(`Server started at http://localhost:${info.port}`);
-  },
-);
+serve({
+  fetch: server.fetch,
+  port: 3000,
+});
