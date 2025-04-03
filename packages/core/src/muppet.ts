@@ -54,97 +54,31 @@ export function createMuppetServer<
 >(options: CreateMuppetOptions<E, S, P>) {
   const { config, specs, app } = options;
 
-  const mcp = new Hono<BaseEnv<E, S, P>>().use(async (c, next) => {
-    config.logger?.info(
-      { method: c.req.method, path: c.req.path },
-      "Incoming request",
-    );
-
-    c.set("muppet", config);
-    c.set("specs", specs);
-    c.set("app", app);
-
-    await next();
-
-    config.logger?.info({ status: c.res.status }, "Outgoing response");
-  });
-
-  // Init request
-  mcp.post(
-    "/initialize",
-    sValidator("json", InitializeRequestSchema),
-    async (c) => {
-      const { params } = c.req.valid("json");
-
-      const { name, version } = c.get("muppet");
-      const specs = c.get("specs");
-
-      const hasTools = McpPrimitives.TOOLS in specs;
-      const hasPrompts = McpPrimitives.PROMPTS in specs;
-      const hasResources = McpPrimitives.RESOURCES in specs;
-
-      return c.json({
-        result: {
-          protocolVersion: SUPPORTED_PROTOCOL_VERSIONS.includes(
-            params?.protocolVersion,
-          )
-            ? params.protocolVersion
-            : LATEST_PROTOCOL_VERSION,
-          serverInfo: {
-            name,
-            version,
-          },
-          capabilities: {
-            tools: hasTools ? {} : undefined,
-            prompts: hasPrompts ? {} : undefined,
-            resources: hasResources ? {} : undefined,
-          },
-        },
-      });
-    },
-  );
-
-  mcp.post("/notifications/:event", (c) => {
-    c.get("muppet").events?.emit(
-      c,
-      `notifications/${c.req.param("event")}` as keyof ClientToServerNotifications,
-      undefined,
-    );
-
-    return c.body(null, 204);
-  });
-
-  mcp.post("/ping", (c) => c.json({ result: {} }));
-
   /**
    * Tools router
    */
-  const toolsRouter = new Hono<BaseEnv<E, S, P>>().use(async (c, next) => {
-    if (!(McpPrimitives.TOOLS in c.get("specs"))) {
-      throw new Error("No tools available");
-    }
+  const toolsRouter = new Hono<BaseEnv<E, S, P>>()
+    .use(async (c, next) => {
+      if (!(McpPrimitives.TOOLS in c.get("specs"))) {
+        throw new Error("No tools available");
+      }
 
-    await next();
-  });
-
-  toolsRouter.post("/list", (c) =>
-    c.json({
-      result: {
-        tools: Object.values(c.get("specs").tools ?? {}).map(
-          ({ name, description, inputSchema }) => ({
-            name,
-            description,
-            inputSchema,
-          }),
-        ),
-      },
-    }),
-  );
-
-  toolsRouter.post(
-    "/call",
-    sValidator("json", CallToolRequestSchema),
-    async (c) => {
+      await next();
+    })
+    .post("/list", (c) =>
+      c.json({
+        result: {
+          tools: Object.values(c.get("specs").tools ?? {}).map(
+            ({ name, description, inputSchema }) => ({
+              name,
+              description,
+              inputSchema,
+            }),
+          ),
+        },
+      }),
+    )
+    .post("/call", sValidator("json", CallToolRequestSchema), async (c) => {
       const { params } = c.req.valid("json");
 
       const { path, method, resourceType, schema } =
@@ -184,34 +118,29 @@ export function createMuppetServer<
         });
 
       return c.json({ result: json });
-    },
-  );
+    });
 
   /**
    * Prompt Router
    */
-  const promptsRouter = new Hono<BaseEnv<E, S, P>>().use(async (c, next) => {
-    if (!(McpPrimitives.PROMPTS in c.get("specs"))) {
-      throw new Error("No prompts available");
-    }
+  const promptsRouter = new Hono<BaseEnv<E, S, P>>()
+    .use(async (c, next) => {
+      if (!(McpPrimitives.PROMPTS in c.get("specs"))) {
+        throw new Error("No prompts available");
+      }
 
-    await next();
-  });
-
-  promptsRouter.post("/list", (c) => {
-    return c.json({
-      result: {
-        prompts: Object.values(c.get("specs").prompts ?? {}).map(
-          ({ path, ...prompt }) => prompt,
-        ),
-      },
-    });
-  });
-
-  promptsRouter.post(
-    "/get",
-    sValidator("json", GetPromptRequestSchema),
-    async (c) => {
+      await next();
+    })
+    .post("/list", (c) => {
+      return c.json({
+        result: {
+          prompts: Object.values(c.get("specs").prompts ?? {}).map(
+            ({ path, ...prompt }) => prompt,
+          ),
+        },
+      });
+    })
+    .post("/get", sValidator("json", GetPromptRequestSchema), async (c) => {
       const { params } = c.req.valid("json");
 
       const prompt = c.get("specs").prompts?.[params.name];
@@ -237,92 +166,60 @@ export function createMuppetServer<
         });
 
       return c.json({ result: json });
-    },
-  );
+    });
 
   /**
    * Resource Router
    */
-  const resourcesRouter = new Hono<BaseEnv<E, S, P>>().use(async (c, next) => {
-    if (!(McpPrimitives.RESOURCES in c.get("specs"))) {
-      throw new Error("No resources available");
-    }
+  const resourcesRouter = new Hono<BaseEnv<E, S, P>>()
+    .use(async (c, next) => {
+      if (!(McpPrimitives.RESOURCES in c.get("specs"))) {
+        throw new Error("No resources available");
+      }
 
-    await next();
-  });
+      await next();
+    })
+    .post("/list", async (c) => {
+      const resources = await findAllTheResources(c, (resource) => {
+        if (resource.type !== "template") {
+          return {
+            name: resource.name,
+            description: resource.description,
+            mimeType: resource.mimeType,
+            uri: resource.uri,
+          };
+        }
 
-  async function findAllTheResources<T>(
-    c: Context<BaseEnv<E, S, P>>,
-    mapFn: (resource: Resource) => T | undefined,
-  ) {
-    const responses = await Promise.all(
-      Object.values(c.get("specs").resources ?? {}).map(
-        async ({ path, method }) => {
-          const res = await c.get("app").request(path, {
-            method,
-            headers: c.req.header(),
-          });
+        return;
+      });
 
-          return res.json() as Promise<Resource[]>;
+      return c.json({
+        result: {
+          resources,
         },
-      ),
-    );
+      });
+    })
+    .post("/templates/list", async (c) => {
+      const resources = await findAllTheResources(c, (resource) => {
+        if (resource.type === "template") {
+          return {
+            name: resource.name,
+            description: resource.description,
+            mimeType: resource.mimeType,
+            uriTemplate: resource.uri,
+          };
+        }
 
-    return responses.flat(2).reduce((prev: T[], resource: Resource) => {
-      const mapped = mapFn(resource);
+        return;
+      });
 
-      if (mapped) prev.push(mapped);
-
-      return prev;
-    }, []);
-  }
-
-  resourcesRouter.post("/list", async (c) => {
-    const resources = await findAllTheResources(c, (resource) => {
-      if (resource.type !== "template") {
-        return {
-          name: resource.name,
-          description: resource.description,
-          mimeType: resource.mimeType,
-          uri: resource.uri,
-        };
-      }
-
-      return;
-    });
-
-    return c.json({
-      result: {
-        resources,
-      },
-    });
-  });
-
-  resourcesRouter.post("/templates/list", async (c) => {
-    const resources = await findAllTheResources(c, (resource) => {
-      if (resource.type === "template") {
-        return {
-          name: resource.name,
-          description: resource.description,
-          mimeType: resource.mimeType,
-          uriTemplate: resource.uri,
-        };
-      }
-
-      return;
-    });
-
-    return c.json({
-      result: {
-        resourceTemplates: resources,
-      },
-    });
-  });
-
-  resourcesRouter.post(
-    "/read",
-    sValidator("json", ReadResourceRequestSchema),
-    async (c) => {
+      return c.json({
+        result: {
+          resourceTemplates: resources,
+        },
+      });
+    })
+    .post("/read", sValidator("json", ReadResourceRequestSchema), async (c) => {
       const { params } = c.req.valid("json");
 
       const protocol = params.uri.split(":")[0];
@@ -340,87 +237,144 @@ export function createMuppetServer<
         });
 
       return c.json({ result: contents });
-    },
-  );
+    });
 
-  mcp.route("/tools", toolsRouter);
-  mcp.route("/prompts", promptsRouter);
-  mcp.route("/resources", resourcesRouter);
+  const mcp = new Hono<BaseEnv<E, S, P>>()
+    .use(async (c, next) => {
+      config.logger?.info(
+        { method: c.req.method, path: c.req.path },
+        "Incoming request",
+      );
 
-  mcp.post(
-    "/completion/complete",
-    sValidator("json", CompleteRequestSchema),
-    async (c) => {
-      const { params } = c.req.valid("json");
+      c.set("muppet", config);
+      c.set("specs", specs);
+      c.set("app", app);
 
-      let completionFn: CompletionFn | undefined;
+      await next();
 
-      if (params.ref.type === "ref/prompt") {
-        completionFn = c.get("specs").prompts?.[params.ref.name].completion;
-      } else if (params.ref.type === "ref/resource") {
-        completionFn = await findAllTheResources(c, (resource) => {
-          if (resource.type === "template" && resource.uri === params.ref.uri) {
-            return resource.completion;
-          }
+      config.logger?.info({ status: c.res.status }, "Outgoing response");
+    })
+    .post(
+      "/initialize",
+      sValidator("json", InitializeRequestSchema),
+      async (c) => {
+        const { params } = c.req.valid("json");
 
-          return;
-        }).then((res) => res[0]);
-      }
+        const { name, version } = c.get("muppet");
+        const specs = c.get("specs");
 
-      if (!completionFn)
+        const hasTools = McpPrimitives.TOOLS in specs;
+        const hasPrompts = McpPrimitives.PROMPTS in specs;
+        const hasResources = McpPrimitives.RESOURCES in specs;
+
         return c.json({
           result: {
-            completion: {
-              values: [],
-              total: 0,
-              hasMore: false,
+            protocolVersion: SUPPORTED_PROTOCOL_VERSIONS.includes(
+              params?.protocolVersion,
+            )
+              ? params.protocolVersion
+              : LATEST_PROTOCOL_VERSION,
+            serverInfo: {
+              name,
+              version,
+            },
+            capabilities: {
+              tools: hasTools ? {} : undefined,
+              prompts: hasPrompts ? {} : undefined,
+              resources: hasResources ? {} : undefined,
             },
           },
         });
+      },
+    )
+    .post("/notifications/:event", (c) => {
+      c.get("muppet").events?.emit(
+        c,
+        `notifications/${c.req.param("event")}` as keyof ClientToServerNotifications,
+        undefined,
+      );
 
-      const values = await completionFn(params.argument);
+      return c.body(null, 204);
+    })
+    .post("/ping", (c) => c.json({ result: {} }))
+    .route("/tools", toolsRouter)
+    .route("/prompts", promptsRouter)
+    .route("/resources", resourcesRouter)
+    .post(
+      "/completion/complete",
+      sValidator("json", CompleteRequestSchema),
+      async (c) => {
+        const { params } = c.req.valid("json");
 
-      if (Array.isArray(values)) {
-        return c.json({
-          result: {
-            completion: {
-              values,
-              total: values.length,
-              hasMore: false,
+        let completionFn: CompletionFn | undefined;
+
+        if (params.ref.type === "ref/prompt") {
+          completionFn = c.get("specs").prompts?.[params.ref.name].completion;
+        } else if (params.ref.type === "ref/resource") {
+          completionFn = await findAllTheResources(c, (resource) => {
+            if (
+              resource.type === "template" &&
+              resource.uri === params.ref.uri
+            ) {
+              return resource.completion;
+            }
+
+            return;
+          }).then((res) => res[0]);
+        }
+
+        if (!completionFn)
+          return c.json({
+            result: {
+              completion: {
+                values: [],
+                total: 0,
+                hasMore: false,
+              },
             },
-          },
-        });
-      }
+          });
 
-      return c.json({ result: { completion: values } });
-    },
-  );
+        const values = await completionFn(params.argument);
 
-  mcp.notFound((c) => {
-    c.get("muppet").logger?.info("Method not found");
+        if (Array.isArray(values)) {
+          return c.json({
+            result: {
+              completion: {
+                values,
+                total: values.length,
+                hasMore: false,
+              },
+            },
+          });
+        }
 
-    return c.json({
-      error: {
-        code: ErrorCode.MethodNotFound,
-        message: "Method not found",
+        return c.json({ result: { completion: values } });
       },
-    });
-  });
+    )
+    .notFound((c) => {
+      c.get("muppet").logger?.info("Method not found");
 
-  mcp.onError((err, c) => {
-    c.get("muppet").logger?.error({ err }, "Internal error");
+      return c.json({
+        error: {
+          code: ErrorCode.MethodNotFound,
+          message: "Method not found",
+        },
+      });
+    })
+    .onError((err, c) => {
+      c.get("muppet").logger?.error({ err }, "Internal error");
 
-    return c.json({
-      error: {
-        // @ts-expect-error
-        code: Number.isSafeInteger(err.code)
-          ? // @ts-expect-error
-            err.code
-          : ErrorCode.InternalError,
-        message: err.message ?? "Internal error",
-      },
+      return c.json({
+        error: {
+          // @ts-expect-error
+          code: Number.isSafeInteger(err.code)
+            ? // @ts-expect-error
+              err.code
+            : ErrorCode.InternalError,
+          message: err.message ?? "Internal error",
+        },
+      });
     });
-  });
 
   return mcp;
 }
@@ -576,6 +530,34 @@ export function mergeSchemas(
   }
 
   return tmp;
+}
+
+async function findAllTheResources<
+  T,
+  E extends Env = BlankEnv,
+  S extends Schema = BlankSchema,
+  P extends string = string,
+>(c: Context<BaseEnv<E, S, P>>, mapFn: (resource: Resource) => T | undefined) {
+  const responses = await Promise.all(
+    Object.values(c.get("specs").resources ?? {}).map(
+      async ({ path, method }) => {
+        const res = await c.get("app").request(path, {
+          method,
+          headers: c.req.header(),
+        });
+
+        return res.json() as Promise<Resource[]>;
+      },
+    ),
+  );
+
+  return responses.flat(2).reduce((prev: T[], resource: Resource) => {
+    const mapped = mapFn(resource);
+
+    if (mapped) prev.push(mapped);
+
+    return prev;
+  }, []);
 }
 
 export function generateKey(method: string, path: string) {

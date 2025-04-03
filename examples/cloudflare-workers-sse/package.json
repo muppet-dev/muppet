@@ -1,5 +1,5 @@
 {
-  "name": "with-edge",
+  "name": "cloudflare-workers-sse",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --minify"

@@ -1,23 +1,53 @@
-import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { bridge, muppet } from "muppet";
+import {
+  type ToolResponseType,
+  bridge,
+  describeTool,
+  mValidator,
+  muppet,
+} from "muppet";
 import { SSEHonoTransport, streamSSE } from "muppet/streaming";
+import z from "zod";
 
 const app = new Hono();
 
-// Define your tools, prompts, and resources here
-// ...
+app.post(
+  "/hello",
+  describeTool({
+    name: "Greet User with Hello",
+    description:
+      "This will take in the name of the user and greet them. eg. Hello John",
+  }),
+  mValidator(
+    "json",
+    z.object({
+      name: z.string(),
+    }),
+  ),
+  (c) => {
+    const { name } = c.req.valid("json");
+    return c.json<ToolResponseType>([
+      {
+        type: "text",
+        text: `Hello ${name}!`,
+      },
+    ]);
+  },
+);
 
 const mcp = muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
 });
 
+/**
+ * For SSE transport
+ */
 let transport: SSEHonoTransport | null = null;
 
 const server = new Hono();
 
-server.get("/sse", async (c) => {
+server.get("/sse", (c) => {
   return streamSSE(c, async (stream) => {
     transport = new SSEHonoTransport("/messages");
     transport.connectWithStream(stream);
@@ -43,12 +73,4 @@ server.onError((err, c) => {
   return c.body(err.message, 500);
 });
 
-serve(
-  {
-    fetch: server.fetch,
-    port: 3001,
-  },
-  (info) => {
-    console.log(`Server started at http://localhost:${info.port}`);
-  },
-);
+Deno.serve(server.fetch);

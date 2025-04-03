@@ -1,78 +1,23 @@
+import { DurableObject } from "cloudflare:workers";
 import { type Env, Hono } from "hono";
 import {
-  type PromptResponseType,
   type ToolResponseType,
-  describePrompt,
+  bridge,
   describeTool,
   mValidator,
   muppet,
-  registerResources,
-  bridge,
 } from "muppet";
-import z from "zod";
 import { SSEHonoTransport, streamSSE } from "muppet/streaming";
-import { DurableObject } from "cloudflare:workers";
+import z from "zod";
 
 const app = new Hono();
 
-app.get("/", (c) => c.text("Hello World"));
-
-/**
- * This is a simple 'hello world', which takes a name as input and returns a greeting
- */
 app.post(
   "/hello",
   describeTool({
-    name: "Hello World",
-    description: "A simple hello world route",
-  }),
-  mValidator(
-    "json",
-    z.object({
-      name: z.string(),
-    }),
-  ),
-  (c) => {
-    const payload = c.req.valid("json");
-    return c.json<ToolResponseType>([
-      {
-        type: "text",
-        text: `Hello ${payload.name}!`,
-      },
-    ]);
-  },
-);
-
-/**
- * Dummy resources, their fetchers are define in the muppet's configuration
- */
-app.post(
-  "/documents",
-  registerResources((c) => {
-    return c.json([
-      {
-        uri: "https://lorem.ipsum",
-        name: "Todo list",
-        mimeType: "text/plain",
-      },
-      {
-        type: "template",
-        uri: "https://lorem.{ending}",
-        name: "Todo list",
-        mimeType: "text/plain",
-      },
-    ]);
-  }),
-);
-
-/**
- * A simple prompt
- */
-app.post(
-  "/simple",
-  describePrompt({
-    name: "Simple Prompt",
-    completion: () => ["muppet", "hono", "edge"],
+    name: "Greet User with Hello",
+    description:
+      "This will take in the name of the user and greet them. eg. Hello John",
   }),
   mValidator(
     "json",
@@ -82,13 +27,10 @@ app.post(
   ),
   (c) => {
     const { name } = c.req.valid("json");
-    return c.json<PromptResponseType>([
+    return c.json<ToolResponseType>([
       {
-        role: "user",
-        content: {
-          type: "text",
-          text: `This is a simple prompt for ${name}`,
-        },
+        type: "text",
+        text: `Hello ${name}!`,
       },
     ]);
   },
@@ -98,28 +40,6 @@ app.post(
 const mcp = muppet(app, {
   name: "My Muppet",
   version: "1.0.0",
-  resources: {
-    https: (uri) => {
-      if (uri === "https://lorem.ipsum")
-        return [
-          {
-            uri: "task1",
-            text: "This is a fixed task",
-          },
-        ];
-
-      return [
-        {
-          uri: "task1",
-          text: "This is dynamic task",
-        },
-        {
-          uri: "task2",
-          text: "Could be fetched from a DB",
-        },
-      ];
-    },
-  },
 });
 
 /**
@@ -127,7 +47,7 @@ const mcp = muppet(app, {
  */
 const server = new Hono<{ Bindings: { transport: SSEHonoTransport } }>();
 
-server.get("/sse", async (c) => {
+server.get("/sse", (c) => {
   return streamSSE(c, async (stream) => {
     c.env.transport.connectWithStream(stream);
 

@@ -1,11 +1,12 @@
 {
-    "title": "muppet",
-    "pages": [
-        "index",
-        "./quickstart",
-        "examples",
-        "./concepts",
-        "./openapi",
-        "contributing"
-    ]
+  "title": "muppet",
+  "pages": [
+    "index",
+    "./quickstart",
+    "./runtimes",
+    "examples",
+    "./concepts",
+    "./openapi",
+    "contributing"
+  ]
 }

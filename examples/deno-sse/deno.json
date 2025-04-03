@@ -1,0 +1,14 @@
+{
+  "imports": {
+    "hono": "npm:hono@^4.7.5",
+    "muppet": "npm:muppet@latest",
+    "zod": "npm:zod@3.24.2"
+  },
+  "tasks": {
+    "start": "deno run --allow-net main.ts"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "hono/jsx"
+  }
+}

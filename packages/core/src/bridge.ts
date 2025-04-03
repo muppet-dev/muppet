@@ -6,6 +6,9 @@ import {
 import type { Env, Hono, Schema } from "hono";
 import type { BlankSchema } from "hono/types";
 import type { Logger } from "pino";
+import type { createMuppetServer } from "./muppet";
+
+type Promisify<T> = T | Promise<T>;
 
 export type BridgeOptions<
   E extends Env = any,
@@ -15,7 +18,7 @@ export type BridgeOptions<
   /**
    * The Muppet app instance
    */
-  mcp: Hono<E, S, P> | Promise<Hono<E, S, P>>;
+  mcp: Promisify<ReturnType<typeof createMuppetServer<E, S, P>>>;
   /**
    * The transport that will be used to send and receive messages
    */

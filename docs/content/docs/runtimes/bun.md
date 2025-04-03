@@ -1,23 +1,17 @@
-import { serve } from "@hono/node-server";
-import { Hono } from "hono";
-import { bridge, muppet } from "muppet";
-import { SSEHonoTransport, streamSSE } from "muppet/streaming";
+---
+title: Bun
+---
 
-const app = new Hono();
+With [Bun](https://bun.sh) you can run Muppet on both the transport layers.
 
-// Define your tools, prompts, and resources here
-// ...
+For the SSE transport layer, you will have to create a proxy server to handle the SSE connection. Here is an example of how to do that:
 
-const mcp = muppet(app, {
-  name: "My Muppet",
-  version: "1.0.0",
-});
-
+```ts
 let transport: SSEHonoTransport | null = null;
 
 const server = new Hono();
 
-server.get("/sse", async (c) => {
+server.get("/sse", (c) => {
   return streamSSE(c, async (stream) => {
     transport = new SSEHonoTransport("/messages");
     transport.connectWithStream(stream);
@@ -43,12 +37,5 @@ server.onError((err, c) => {
   return c.body(err.message, 500);
 });
 
-serve(
-  {
-    fetch: server.fetch,
-    port: 3001,
-  },
-  (info) => {
-    console.log(`Server started at http://localhost:${info.port}`);
-  },
-);
+export default server;
+```
