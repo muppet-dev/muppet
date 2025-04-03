@@ -3,8 +3,7 @@
   "version": "0.0.1",
   "bin": "./dist/index.js",
   "scripts": {
-    "dev": "tsx --watch ./src/index.ts",
-    "build": "pkgroll --minify"
+    "dev": "bun run --hot ./src/index.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
@@ -14,8 +13,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
-    "pkgroll": "^2.11.2",
-    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },
   "nx": {
