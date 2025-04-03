@@ -78,7 +78,7 @@ async function main(
   let target: string;
   if (targetDir) {
     target = targetDir;
-    p.note(`Using target directory - ${target}`);
+    p.note(`Using target directory - ${chalk.green(chalk.bold(target))}`);
   } else {
     const answer = await p.text({
       message: "Target directory",
@@ -205,7 +205,7 @@ async function main(
     );
   }
 
-  p.note(`Get started with - ${chalk.bold(`cd ${target}`)}`);
+  p.note(`Get started with - ${chalk.green(chalk.bold(`cd ${target}`))}`);
   p.outro(`${chalk.bold("Muppet project created successfully!")}`);
   process.exit(0);
 }

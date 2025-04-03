@@ -51,7 +51,7 @@ export function createMuppetServer<
   E extends Env = BlankEnv,
   S extends Schema = BlankSchema,
   P extends string = string,
->(options: CreateMuppetOptions<E, S, P>) {
+>(options: CreateMuppetOptions<E, S, P>): Hono<BaseEnv<E, S, P>> {
   const { config, specs, app } = options;
 
   /**
