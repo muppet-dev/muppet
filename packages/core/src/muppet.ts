@@ -459,6 +459,7 @@ export async function generateSpecs<
         configuration.tools[key] = {
           name: key,
           description: concept.description,
+          resourceType: concept.resourceType,
           inputSchema: mergeSchemas(concept.schema) ?? {},
           path,
           method,

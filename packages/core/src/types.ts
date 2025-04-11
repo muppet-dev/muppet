@@ -151,6 +151,7 @@ export type ConceptConfiguration = Record<
       string,
       | (DescribeOptions & {
           schema?: { [K in keyof ValidationTargets]?: JSONSchema7 };
+          resourceType?: "raw" | "text";
           type?: McpPrimitivesValue;
           completion?: CompletionFn;
         })
