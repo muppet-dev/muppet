@@ -48,14 +48,13 @@ export function cleanup(options: CleanupOptions) {
 
     const packageJsonParsed = JSON.parse(packageJson);
 
+    packageJsonParsed.name = name;
     packageJsonParsed.nx = undefined;
     packageJsonParsed.dependencies.muppet = "latest";
 
-    const newPackageJson = {
-      name,
-      ...packageJsonParsed,
-    };
-
-    fs.writeFileSync(packageJsonPath, JSON.stringify(newPackageJson, null, 2));
+    fs.writeFileSync(
+      packageJsonPath,
+      JSON.stringify(packageJsonParsed, null, 2),
+    );
   }
 }
