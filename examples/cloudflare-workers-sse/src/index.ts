@@ -15,7 +15,7 @@ const app = new Hono();
 app.post(
   "/hello",
   describeTool({
-    name: "Greet User with Hello",
+    name: "greet-user-with-hello",
     description:
       "This will take in the name of the user and greet them. eg. Hello John",
   }),
