@@ -63,6 +63,8 @@ export type BaseEnv<
   S extends Schema = BlankSchema,
   P extends string = string,
 > = {
+  // biome-ignore lint/complexity/noBannedTypes: Need to pass env to Hono
+  Bindings: {};
   Variables: {
     muppet: MuppetConfiguration;
     specs: ServerConfiguration;
