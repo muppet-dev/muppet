@@ -1,5 +1,6 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import {
   type ToolResponseType,
   bridge,
@@ -46,7 +47,12 @@ const mcp = muppet(app, {
  */
 let transport: SSEHonoTransport | null = null;
 
-const server = new Hono();
+const server = new Hono().use(
+  cors({
+    origin: (origin) => origin,
+    credentials: true,
+  }),
+);
 
 server.get("/sse", (c) => {
   return streamSSE(c, async (stream) => {

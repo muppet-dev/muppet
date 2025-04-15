@@ -45,7 +45,12 @@ const mcp = muppet(app, {
  */
 let transport: SSEHonoTransport | null = null;
 
-const server = new Hono();
+const server = new Hono().use(
+  cors({
+    origin: (origin) => origin,
+    credentials: true,
+  }),
+);
 
 server.get("/sse", (c) => {
   return streamSSE(c, async (stream) => {
@@ -74,3 +79,10 @@ server.onError((err, c) => {
 });
 
 Deno.serve(server.fetch);
+
+function cors(arg0: {
+  origin: (origin: any) => any;
+  credentials: boolean;
+}): any {
+  throw new Error("Function not implemented.");
+}

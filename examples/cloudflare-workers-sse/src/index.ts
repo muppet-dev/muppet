@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { type Env, Hono } from "hono";
+import { cors } from "hono/cors";
 import {
   type ToolResponseType,
   bridge,
@@ -45,7 +46,12 @@ const mcp = muppet(app, {
 /**
  * For SSE transport
  */
-const server = new Hono<{ Bindings: { transport: SSEHonoTransport } }>();
+const server = new Hono<{ Bindings: { transport: SSEHonoTransport } }>().use(
+  cors({
+    origin: (origin) => origin,
+    credentials: true,
+  }),
+);
 
 server.get("/sse", (c) => {
   return streamSSE(c, async (stream) => {
