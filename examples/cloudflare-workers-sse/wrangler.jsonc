@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "with-agents",
+  "name": "muppet-sse",
   "main": "src/index.ts",
   "compatibility_date": "2025-03-26",
   "durable_objects": {
