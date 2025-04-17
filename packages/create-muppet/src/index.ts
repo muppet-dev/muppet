@@ -168,6 +168,13 @@ async function main(
 
     chdir(targetDirectoryPath);
 
+    // Cleaning up the project files
+    cleanup({
+      dir: targetDirectoryPath,
+      name: projectName,
+      runtime: runtimeName,
+    });
+
     if (packageManager) {
       const installCommand =
         knownPackageManagers[packageManager as PackageManager];
@@ -178,13 +185,6 @@ async function main(
 
       spin = p.spinner({ indicator: "timer" });
       spin.start("Installing project dependencies");
-
-      // Cleaning up the project files
-      cleanup({
-        dir: targetDirectoryPath,
-        name: projectName,
-        runtime: runtimeName,
-      });
 
       const proc = exec(installCommand);
 
