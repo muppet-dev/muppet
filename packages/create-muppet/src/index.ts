@@ -178,6 +178,14 @@ async function main(
 
       spin = p.spinner({ indicator: "timer" });
       spin.start("Installing project dependencies");
+
+      // Cleaning up the project files
+      cleanup({
+        dir: targetDirectoryPath,
+        name: projectName,
+        runtime: runtimeName,
+      });
+
       const proc = exec(installCommand);
 
       const procExit: number = await new Promise((res) => {
@@ -191,12 +199,6 @@ async function main(
         exit(procExit);
       }
     }
-
-    cleanup({
-      dir: targetDirectoryPath,
-      name: projectName,
-      runtime: runtimeName,
-    });
   } catch (e) {
     throw new Error(
       `Error running hook for ${runtimeName}-${transportName}: ${
