@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
+    "@hono/standard-validator": "^0.1.2",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "hono": "^4.7.4",
     "muppet": "workspace:*",

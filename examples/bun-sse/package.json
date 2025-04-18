@@ -6,6 +6,7 @@
     "dev": "bun run --hot ./src/index.ts"
   },
   "dependencies": {
+    "@hono/standard-validator": "^0.1.2",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "hono": "^4.7.4",
     "muppet": "workspace:*",
@@ -18,7 +19,9 @@
   "nx": {
     "targets": {
       "build": {
-        "dependsOn": ["^build"]
+        "dependsOn": [
+          "^build"
+        ]
       }
     }
   }
