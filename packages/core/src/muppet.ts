@@ -95,6 +95,7 @@ export function createMuppetServer<
           schema,
           args: params.arguments,
         }),
+        c.env,
       );
 
       const json = await res.json();
@@ -156,6 +157,7 @@ export function createMuppetServer<
           schema: prompt.schema,
           args: params.arguments,
         }),
+        c.env,
       );
 
       const json = await res.json();
