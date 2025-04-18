@@ -126,6 +126,9 @@ importers:
 
   examples/bun-sse:
     dependencies:
+      '@hono/standard-validator':
+        specifier: ^0.1.2
+        version: 0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4)
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.8.0
@@ -182,6 +185,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.14.0(hono@4.7.4)
+      '@hono/standard-validator':
+        specifier: ^0.1.2
+        version: 0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4)
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.8.0
@@ -213,6 +219,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.14.0(hono@4.7.4)
+      '@hono/standard-validator':
+        specifier: ^0.1.2
+        version: 0.1.2(@standard-schema/spec@1.0.0)(hono@4.7.4)
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.8.0
