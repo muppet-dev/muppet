@@ -1,5 +1,5 @@
 import { Logo } from "@/components/Logo";
-import { FaBluesky, FaXTwitter } from "react-icons/fa6";
+import { FaBluesky, FaXTwitter, FaDiscord } from "react-icons/fa6";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 /**
@@ -25,6 +25,12 @@ export const baseOptions: BaseLayoutProps = {
       icon: <FaXTwitter />,
       text: "BlueSky",
       url: "https://bsky.app/profile/muppet.dev",
+    },
+    {
+      type: "icon",
+      icon: <FaDiscord />,
+      text: "Discord",
+      url: "https://discord.gg/3fWqvErPP5",
     },
   ],
   githubUrl: "https://github.com/muppet-dev/muppet",
