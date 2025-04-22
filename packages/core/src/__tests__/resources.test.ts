@@ -14,8 +14,8 @@ describe("resources", async () => {
 
     const app = new Hono().post(
       "/",
-      registerResources((c) => {
-        return c.json<Resource[]>([resource]);
+      registerResources(() => {
+        return [resource];
       }),
     );
 
@@ -86,8 +86,8 @@ describe("resources", async () => {
 
     const app = new Hono().post(
       "/",
-      registerResources((c) => {
-        return c.json<Resource[]>([resource]);
+      registerResources(() => {
+        return [resource];
       }),
     );
 
@@ -171,8 +171,8 @@ describe("resources", async () => {
 
     const app = new Hono().post(
       "/",
-      registerResources((c) => {
-        return c.json<Resource[]>(mixedResources);
+      registerResources(() => {
+        return mixedResources;
       }),
     );
 

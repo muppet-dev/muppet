@@ -38,7 +38,7 @@ describe("basic", async () => {
     .post(
       "/documents",
       registerResources((c) => {
-        return c.json([
+        return [
           {
             uri: "https://lorem.ipsum",
             name: "Todo list",
@@ -50,7 +50,7 @@ describe("basic", async () => {
             name: "Todo list",
             mimeType: "text/plain",
           },
-        ]);
+        ];
       }),
     )
     .post(
