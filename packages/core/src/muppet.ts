@@ -241,7 +241,7 @@ export function createMuppetServer<
       return c.json({ result: contents });
     });
 
-  const mcp = new Hono<BaseEnv<E, S, P>>()
+  return new Hono<BaseEnv<E, S, P>>()
     .use(async (c, next) => {
       config.logger?.info(
         { method: c.req.method, path: c.req.path },
@@ -377,8 +377,6 @@ export function createMuppetServer<
         },
       });
     });
-
-  return mcp;
 }
 
 export async function generateSpecs<
@@ -543,14 +541,12 @@ async function findAllTheResources<
 >(c: Context<BaseEnv<E, S, P>>, mapFn: (resource: Resource) => T | undefined) {
   const responses = await Promise.all(
     Object.values(c.get("specs").resources ?? {}).map(
-      async ({ path, method }) => {
-        const res = await c.get("app").request(path, {
+      async ({ path, method }) =>
+        // @ts-expect-error
+        c.get("app").request(path, {
           method,
           headers: c.req.header(),
-        });
-
-        return res.json() as Promise<Resource[]>;
-      },
+        }) as Promise<Resource[]>,
     ),
   );
 
