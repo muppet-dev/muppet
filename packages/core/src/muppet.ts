@@ -231,7 +231,7 @@ export function createMuppetServer<
         throw new Error(`Unable to find the handler for ${protocol} protocol!`);
       }
 
-      const contents = handler(params.uri);
+      const contents = await handler(params.uri);
 
       if (Array.isArray(contents))
         return c.json({
