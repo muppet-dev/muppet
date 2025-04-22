@@ -11,7 +11,7 @@ muppet(app, {
       return [
         {
           uri,
-          name: "Todo list",
+          text: "Todo list",
           mimeType: "text/plain",
         },
       ];
