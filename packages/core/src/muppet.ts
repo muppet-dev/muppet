@@ -81,18 +81,17 @@ export function createMuppetServer<
     .post("/call", sValidator("json", CallToolRequestSchema), async (c) => {
       const { params } = c.req.valid("json");
 
-      const { path, method, resourceType, schema } =
-        c.get("specs").tools?.[params.name] ?? {};
+      const _tool = c.get("specs").tools?.[params.name];
 
-      if (!path || !method) {
+      if (!_tool) {
         throw new Error("Unable to find the path for the tool!");
       }
 
       const res = await c.get("app").request(
         ...getRequestInit({
-          path,
-          method,
-          schema,
+          path: _tool.path,
+          method: _tool.method,
+          schema: _tool.schema,
           args: params.arguments,
         }),
         c.env,
@@ -100,7 +99,7 @@ export function createMuppetServer<
 
       const json = await res.json();
 
-      if (resourceType === "text") {
+      if (_tool.resourceType === "text") {
         return c.json({
           result: {
             content: [
