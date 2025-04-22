@@ -14,6 +14,7 @@ import type {
   BlankEnv,
   BlankSchema,
   Env,
+  Input,
   Schema,
   ValidationTargets,
 } from "hono/types";
@@ -94,7 +95,7 @@ export function createMuppetServer<
           schema: _tool.schema,
           args: params.arguments,
         }),
-        c.env,
+        createMuppetEnv(c),
       );
 
       const json = await res.json();
@@ -156,7 +157,7 @@ export function createMuppetServer<
           schema: prompt.schema,
           args: params.arguments,
         }),
-        c.env,
+        createMuppetEnv(c),
       );
 
       const json = await res.json();
@@ -673,4 +674,15 @@ function querySerializer(
       return prev;
     }, [])
     .join("&");
+}
+
+function createMuppetEnv<E extends Env, P extends string, I extends Input>(
+  c: Context<E, P, I>,
+) {
+  return {
+    ...c.env,
+    muppet: {
+      req: c.req,
+    },
+  };
 }

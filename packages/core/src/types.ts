@@ -8,8 +8,8 @@ import type {
   ImageContentSchema,
   TextContentSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { Env, Hono, Schema, ValidationTargets } from "hono";
-import type { BlankEnv, BlankSchema } from "hono/types";
+import type { Env, Hono, HonoRequest, Schema, ValidationTargets } from "hono";
+import type { BlankEnv, BlankInput, BlankSchema, Input } from "hono/types";
 
 export type HasUndefined<T> = undefined extends T ? true : false;
 
@@ -218,3 +218,10 @@ export type PromptResponseType =
       messages: PromptContentResponseType[];
     }
   | PromptContentResponseType[];
+
+export type MuppetEnv<
+  P extends string = string,
+  I extends Input = BlankInput,
+> = {
+  req: HonoRequest<P, I>;
+};
