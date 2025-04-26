@@ -1,8 +1,13 @@
 import { Hono } from "hono";
-import { type ToolResponseType, describeTool, mValidator } from "muppet";
+import {
+  type MuppetEnv,
+  type ToolResponseType,
+  describeTool,
+  mValidator,
+} from "muppet";
 import z from "zod";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { muppet: MuppetEnv } }>();
 
 app.post(
   "/hello",

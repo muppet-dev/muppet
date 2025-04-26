@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import { muppet } from "muppet";
+import { muppet, type MuppetEnv } from "muppet";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { muppet: MuppetEnv } }>();
 
 // Define your tools, prompts, and resources here
 // ...

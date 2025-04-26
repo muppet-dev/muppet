@@ -1,9 +1,9 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { Hono } from "hono";
-import { bridge, muppet } from "muppet";
+import { bridge, muppet, type MuppetEnv } from "muppet";
 import express from "express";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { muppet: MuppetEnv } }>();
 
 // Define your tools, prompts, and resources here
 // ...

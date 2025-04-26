@@ -1,8 +1,13 @@
 import { Hono } from "hono";
-import { describePrompt, mValidator, type PromptResponseType } from "muppet";
+import {
+  describePrompt,
+  type MuppetEnv,
+  mValidator,
+  type PromptResponseType,
+} from "muppet";
 import z from "zod";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { muppet: MuppetEnv } }>();
 
 app.post(
   "/explain-like-im-5",

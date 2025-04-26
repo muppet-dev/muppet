@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import { describeRoute, uniqueSymbol } from "hono-openapi";
-import { muppet, mValidator } from "muppet";
+import { validator as zValidator } from "hono-openapi/zod";
+import { muppet, type MuppetEnv } from "muppet";
 import z from "zod";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { muppet: MuppetEnv } }>();
 
 app.get(
   "/products",
@@ -11,8 +12,7 @@ app.get(
     summary: "Get all products",
     description: "This endpoint returns a list of all products.",
   }),
-  // TODO: Change this with the hono-openapi validator
-  mValidator("query", z.object({ page: z.number().optional() })),
+  zValidator("query", z.object({ page: z.number().optional() })),
   async (c) => {
     return c.json([
       {

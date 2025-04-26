@@ -1,8 +1,8 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Hono } from "hono";
-import { muppet, bridge } from "muppet";
+import { muppet, bridge, type MuppetEnv } from "muppet";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { muppet: MuppetEnv } }>();
 
 // Define your tools, prompts, and resources here
 // ...

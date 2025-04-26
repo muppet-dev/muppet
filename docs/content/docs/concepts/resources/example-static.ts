@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import { registerResources } from "muppet";
+import { type MuppetEnv, registerResources } from "muppet";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { muppet: MuppetEnv } }>();
 
 app.post(
   "/documents",

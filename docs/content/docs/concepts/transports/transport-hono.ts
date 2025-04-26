@@ -1,9 +1,9 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { bridge, muppet } from "muppet";
+import { bridge, muppet, type MuppetEnv } from "muppet";
 import { SSEHonoTransport, streamSSE } from "muppet/streaming";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { muppet: MuppetEnv } }>();
 
 // Define your tools, prompts, and resources here
 // ...
