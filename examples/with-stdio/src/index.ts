@@ -1,6 +1,7 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Hono } from "hono";
 import {
+  type MuppetEnv,
   type ToolResponseType,
   bridge,
   describeTool,
@@ -9,7 +10,7 @@ import {
 } from "muppet";
 import z from "zod";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { muppet: MuppetEnv } }>();
 
 app.post(
   "/hello",

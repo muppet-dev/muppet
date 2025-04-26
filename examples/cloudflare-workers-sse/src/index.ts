@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import { type Env, Hono } from "hono";
 import { cors } from "hono/cors";
 import {
+  type MuppetEnv,
   type ToolResponseType,
   bridge,
   describeTool,
@@ -11,7 +12,7 @@ import {
 import { SSEHonoTransport, streamSSE } from "muppet/streaming";
 import z from "zod";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { muppet: MuppetEnv } }>();
 
 app.post(
   "/hello",
