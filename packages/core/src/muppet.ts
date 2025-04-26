@@ -31,6 +31,8 @@ import type {
   Resource,
   ServerConfiguration,
   ToolHandlerResponse,
+  MuppetEnv,
+  BaseEnvCommonVariables,
 } from "./types";
 import { McpPrimitives, uniqueSymbol } from "./utils";
 
@@ -54,6 +56,8 @@ export function createMuppetServer<
   P extends string = string,
 >(options: CreateMuppetOptions<E, S, P>): Hono<BaseEnv<E, S, P>> {
   const { config, specs, app } = options;
+
+  let client: BaseEnvCommonVariables["client"];
 
   /**
    * Tools router
@@ -249,6 +253,7 @@ export function createMuppetServer<
       );
 
       c.set("muppet", config);
+      c.set("client", client);
       c.set("specs", specs);
       c.set("app", app);
 
@@ -261,6 +266,8 @@ export function createMuppetServer<
       sValidator("json", InitializeRequestSchema),
       async (c) => {
         const { params } = c.req.valid("json");
+
+        client = params;
 
         const { name, version } = c.get("muppet");
         const specs = c.get("specs");
@@ -677,12 +684,16 @@ function querySerializer(
 }
 
 function createMuppetEnv<E extends Env, P extends string, I extends Input>(
-  c: Context<E, P, I>,
-) {
+  c: Context<BaseEnv<E>, P, I>,
+): { muppet: MuppetEnv<P, I> } & Record<string, unknown> {
   return {
     ...c.env,
     muppet: {
       req: c.req,
+      logger: c.get("muppet").logger,
+      client: c.get("client"),
+      reportProgress: c.get("reportProgress"),
+      sessionId: c.get("sessionId"),
     },
   };
 }

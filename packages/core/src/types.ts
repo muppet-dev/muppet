@@ -6,6 +6,7 @@ import type { z } from "zod";
 import type {
   EmbeddedResourceSchema,
   ImageContentSchema,
+  InitializeRequestSchema,
   TextContentSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { Env, Hono, HonoRequest, Schema, ValidationTargets } from "hono";
@@ -58,6 +59,12 @@ export type ToolHandlerResponse = {
   type?: McpPrimitivesValue;
 };
 
+export type BaseEnvCommonVariables = {
+  client?: z.infer<typeof InitializeRequestSchema>["params"];
+  reportProgress?: (progress: number) => void;
+  sessionId?: string;
+};
+
 export type BaseEnv<
   E extends Env = BlankEnv,
   S extends Schema = BlankSchema,
@@ -65,7 +72,7 @@ export type BaseEnv<
 > = {
   // biome-ignore lint/complexity/noBannedTypes: Need to pass env to Hono
   Bindings: {};
-  Variables: {
+  Variables: BaseEnvCommonVariables & {
     muppet: MuppetConfiguration;
     specs: ServerConfiguration;
     app: Hono<E, S, P>;
@@ -222,6 +229,7 @@ export type PromptResponseType =
 export type MuppetEnv<
   P extends string = string,
   I extends Input = BlankInput,
-> = {
+> = BaseEnvCommonVariables & {
   req: HonoRequest<P, I>;
+  logger?: Logger;
 };

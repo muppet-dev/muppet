@@ -3,9 +3,10 @@ import {
   RequestSchema,
   type JSONRPCMessage,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { Env, Hono, Schema } from "hono";
+import { type Env, Hono, type Schema } from "hono";
 import type { BlankSchema } from "hono/types";
 import type { Logger } from "pino";
+import type { BaseEnvCommonVariables } from "./types.js";
 
 type Promisify<T> = T | Promise<T>;
 
@@ -38,8 +39,30 @@ export function bridge(options: BridgeOptions) {
   let messageId = 0;
 
   transport.onmessage = async (message) => {
+    const _mcp = await app;
+
+    const mcp = new Hono<{
+      Variables: Pick<BaseEnvCommonVariables, "reportProgress" | "sessionId">;
+    }>()
+      .use(async (c, next) => {
+        c.set("reportProgress", (progress: number) => {
+          transport.send({
+            jsonrpc: "2.0",
+            method: "notifications/progress",
+            params: {
+              progress,
+              total: 100,
+            },
+          });
+        });
+        c.set("sessionId", transport.sessionId);
+
+        await next();
+      })
+      .route("/", _mcp);
+
     const payload = await handleMessage({
-      mcp: await app,
+      mcp,
       message,
       logger,
     });
