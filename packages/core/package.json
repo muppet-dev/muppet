@@ -37,7 +37,7 @@
   "peerDependencies": {
     "@hono/standard-validator": "^0.1.2",
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "@standard-community/standard-json": "^0.1.2",
+    "@standard-community/standard-json": "^0.3.0-rc.1",
     "@standard-schema/spec": "^1.0.0",
     "file-type": "^20.5.0",
     "hono": "^4.6.13",

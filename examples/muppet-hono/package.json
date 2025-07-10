@@ -1,0 +1,28 @@
+{
+  "name": "muppet-hono",
+  "version": "0.0.1",
+  "bin": "./dist/index.js",
+  "scripts": {
+    "dev": "bun run --hot ./src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.15.0",
+    "hono": "^4.7.4",
+    "muppet": "workspace:*",
+    "@hono/mcp": "^0.1.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": [
+          "^build"
+        ]
+      }
+    }
+  }
+}
