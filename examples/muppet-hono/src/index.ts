@@ -16,9 +16,8 @@ mcp.tool({
   inputSchema: z.object({
     name: z.string(),
   }),
-}, async (c, next) => {
-  console.log("Context -", c);
-  c.set("surname", "Mathur");
+}, async (_c, next) => {
+  // Do something here...
   await next();
 }, (c) => {
   const name = c.message.params.arguments.name;
@@ -26,7 +25,7 @@ mcp.tool({
     content: [
       {
         type: "text",
-        text: `Hello ${name} ${c.get("surname")}!`,
+        text: `Hello ${name}!`,
       },
     ],
   };
