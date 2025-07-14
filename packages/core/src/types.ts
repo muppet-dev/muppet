@@ -2,6 +2,8 @@ import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { JSONSchema7 } from "json-schema";
 import type { Context } from "./context";
 
+export type PromiseOr<T> = T | Promise<T>;
+
 export type Variables = object;
 
 // biome-ignore lint/complexity/noBannedTypes: <explanation>
@@ -29,7 +31,7 @@ type BaseHandler<
 > = (
   c: Context<E, M, R>,
   next: Next,
-) => R | Promise<R>;
+) => PromiseOr<R>;
 
 type BaseMiddlewareHandler<
   E extends Env,
@@ -68,29 +70,54 @@ export type ToolMiddlewareHandler<
   O extends StandardSchemaV1 = StandardSchemaV1,
 > = BaseMiddlewareHandler<E, CallToolRequest<I>, CallToolResult<O>>;
 
-export type PromptOptions = Omit<Prompt, "arguments"> & {
-  arguments: Record<string, StandardSchemaV1>;
+export type PromptArgumentWithCompletion<
+  E extends Env = Env,
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+  K extends keyof I = keyof I,
+> = {
+  validation: I[K];
+  completion?: (
+    value: StandardSchemaV1.InferOutput<I[K]>,
+    context: Context<E, GetPromptRequest<I>, GetPromptResult>,
+  ) => PromiseOr<StandardSchemaV1.InferOutput<I[K]>[]>;
+};
+
+export type PromptOptions<
+  E extends Env = Env,
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+> = Omit<Prompt, "arguments"> & {
+  arguments?: {
+    [K in keyof I]: PromptArgumentWithCompletion<E, I, K>;
+  };
 };
 
 export type SanitizedPromptOptions = PromptOptions & {
   type: "prompt";
 };
 
-export type PromptHandler<E extends Env> = BaseHandler<
+export type PromptHandler<
+  E extends Env,
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+> = BaseHandler<
   E,
-  GetPromptRequest,
+  GetPromptRequest<I>,
   GetPromptResult
 >;
 
 export type PromptMiddlewareHandler<
   E extends Env,
-> = BaseMiddlewareHandler<E, GetPromptRequest, GetPromptResult>;
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+> = BaseMiddlewareHandler<E, GetPromptRequest<I>, GetPromptResult>;
 
-export type ResourceOptions = Resource;
+export type ResourceOptions = Resource | ResourceTemplate;
 
-export type SanitizedResourceOptions = ResourceOptions & {
-  type: "resource";
-};
+export type SanitizedResourceOptions =
+  | ({
+    type: "resource";
+  } & Resource)
+  | ({
+    type: "resource-template";
+  } & ResourceTemplate);
 
 export type ResourceHandler<
   E extends Env,
@@ -100,29 +127,13 @@ export type ResourceMiddlewareHandler<
   E extends Env,
 > = BaseMiddlewareHandler<E, ReadResourceRequest, ReadResourceResult>;
 
-export type ResourceTemplateOptions = ResourceTemplate;
-
-export type SanitizedResourceTemplateOptions = ResourceTemplateOptions & {
-  type: "resource-template";
-};
-
-export type ResourceTemplateHandler<
-  E extends Env,
-> = BaseHandler<E, ReadResourceRequest, ReadResourceResult>;
-
-export type ResourceTemplateMiddlewareHandler<
-  E extends Env,
-> = BaseMiddlewareHandler<E, ReadResourceRequest, ReadResourceResult>;
-
 export type H<E extends Env> =
   | ToolHandler<E>
   | ToolMiddlewareHandler<E>
   | PromptHandler<E>
   | PromptMiddlewareHandler<E>
   | ResourceHandler<E>
-  | ResourceMiddlewareHandler<E>
-  | ResourceTemplateHandler<E>
-  | ResourceTemplateMiddlewareHandler<E>;
+  | ResourceMiddlewareHandler<E>;
 
 export type MiddlewareOptions<E extends Env = any> = {
   type: "middleware";
@@ -134,7 +145,6 @@ export type RouterRoute = (
   | SanitizedToolOptions
   | SanitizedPromptOptions
   | SanitizedResourceOptions
-  | SanitizedResourceTemplateOptions
   | MiddlewareOptions
 )[];
 
@@ -342,11 +352,15 @@ export type ListPromptsResult = BasePaginatedResult & {
   prompts: Prompt[];
 };
 
-export type GetPromptRequest = {
+export type GetPromptRequest<
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+> = {
   method: "prompts/get";
   params: BaseRequestParams & {
     name: string;
-    arguments?: Record<string, string>;
+    arguments: {
+      [K in keyof I]: StandardSchemaV1.InferOutput<I[K]>;
+    };
   };
 };
 
