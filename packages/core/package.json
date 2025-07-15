@@ -42,6 +42,9 @@
   "peerDependenciesMeta": {
     "@standard-schema/spec": {
       "optional": true
+    },
+    "file-type": {
+      "optional": true
     }
   },
   "exports": {
@@ -61,7 +64,6 @@
     "@types/json-schema": "^7.0.15",
     "@types/node": "^24.0.13",
     "file-type": "^20.5.0",
-    "pkgroll": "^2.5.1",
-    "zod": "^3.24.2"
+    "pkgroll": "^2.5.1"
   }
 }
