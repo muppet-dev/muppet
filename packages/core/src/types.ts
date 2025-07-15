@@ -70,16 +70,27 @@ export type ToolMiddlewareHandler<
   O extends StandardSchemaV1 = StandardSchemaV1,
 > = BaseMiddlewareHandler<E, CallToolRequest<I>, CallToolResult<O>>;
 
+export type CompletionFn<
+  E extends Env,
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+  K extends keyof I = keyof I,
+> = (
+  value: StandardSchemaV1.InferOutput<I[K]>,
+  context: Context<E, GetPromptRequest<I>, GetPromptResult>,
+) => PromiseOr<
+  | StandardSchemaV1.InferOutput<I[K]>[]
+  | Omit<CompleteResult["completion"], "values"> & {
+    values: StandardSchemaV1.InferOutput<I[K]>[];
+  }
+>;
+
 export type PromptArgumentWithCompletion<
   E extends Env = Env,
   I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
   K extends keyof I = keyof I,
 > = {
   validation: I[K];
-  completion?: (
-    value: StandardSchemaV1.InferOutput<I[K]>,
-    context: Context<E, GetPromptRequest<I>, GetPromptResult>,
-  ) => PromiseOr<StandardSchemaV1.InferOutput<I[K]>[]>;
+  completion?: CompletionFn<E, I, K>;
 };
 
 export type PromptOptions<
@@ -109,7 +120,19 @@ export type PromptMiddlewareHandler<
   I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
 > = BaseMiddlewareHandler<E, GetPromptRequest<I>, GetPromptResult>;
 
-export type ResourceOptions = Resource | ResourceTemplate;
+export type ResourceTemplateOptions<
+  E extends Env = Env,
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+> = ResourceTemplate & {
+  arguments?: {
+    [K in keyof I]: PromptArgumentWithCompletion<E, I, K>;
+  };
+};
+
+export type ResourceOptions<
+  E extends Env = Env,
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+> = Resource | ResourceTemplateOptions<E, I>;
 
 export type SanitizedResourceOptions =
   | ({
@@ -117,15 +140,17 @@ export type SanitizedResourceOptions =
   } & Resource)
   | ({
     type: "resource-template";
-  } & ResourceTemplate);
+  } & ResourceTemplateOptions);
 
 export type ResourceHandler<
   E extends Env,
-> = BaseHandler<E, ReadResourceRequest, ReadResourceResult>;
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+> = BaseHandler<E, ReadResourceRequest<I>, ReadResourceResult>;
 
 export type ResourceMiddlewareHandler<
   E extends Env,
-> = BaseMiddlewareHandler<E, ReadResourceRequest, ReadResourceResult>;
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+> = BaseMiddlewareHandler<E, ReadResourceRequest<I>, ReadResourceResult>;
 
 export type H<E extends Env> =
   | ToolHandler<E>
@@ -165,6 +190,22 @@ export type BasePaginatedResult = BaseResult & {
 export type BaseMetadata = {
   name: string;
   title?: string;
+};
+
+export type Progress = {
+  progress: number;
+  total?: number;
+  message?: string;
+};
+
+export type ProgressCallback = (progress: Progress) => void;
+
+export type RequestOptions = {
+  onprogress?: ProgressCallback;
+  signal?: AbortSignal;
+  timeout?: number;
+  maxTotalTimeout?: number;
+  resetTimeoutOnProgress?: boolean;
 };
 
 // Errors
@@ -412,10 +453,15 @@ export type ListResourceTemplatesResult = BasePaginatedResult & {
   resourceTemplates: ResourceTemplate[];
 };
 
-export type ReadResourceRequest = {
+export type ReadResourceRequest<
+  I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
+> = {
   method: "resources/read";
   params: BaseRequestParams & {
     uri: string;
+    arguments: {
+      [K in keyof I]: StandardSchemaV1.InferOutput<I[K]>;
+    };
   };
 };
 
@@ -471,8 +517,7 @@ export type ModelPreferences = {
 
 export type SamplingMessage = {
   role: "user" | "assistant";
-  // TODO: add type
-  content: unknown;
+  content: TextContent | ImageContent | AudioContent;
 };
 
 export type CreateMessageRequest = {
@@ -551,9 +596,17 @@ export type ElicitRequest = {
   };
 };
 
-export type ElicitResult = BaseResult & {
+export type ElicitRequestOptions<
+  I extends StandardSchemaV1 = StandardSchemaV1,
+> = Omit<ElicitRequest["params"], "requestedSchema"> & {
+  requestedSchema: I;
+};
+
+export type ElicitResult<
+  I extends StandardSchemaV1 = StandardSchemaV1,
+> = BaseResult & {
   action: "accept" | "decline" | "cancel";
-  content?: Record<string, unknown>;
+  content?: StandardSchemaV1.InferOutput<I>;
 };
 
 // Autocomplete
@@ -594,7 +647,7 @@ export type CompleteResult = BaseResult & {
 
 export type ListRootsRequest = {
   method: "roots/list";
-  params: BaseRequestParams;
+  params?: BaseRequestParams;
 };
 
 export type Root = {
@@ -611,18 +664,17 @@ export type ListRootsResult = BaseResult & {
 
 export type PingRequest = {
   method: "ping";
-  params: BaseRequestParams;
 };
 
 // Notifications
 
 type InitializedNotification = {
   method: "notifications/initialized";
-  params: BaseRequestParams;
+  params?: BaseRequestParams;
 };
 
 type CancelledNotification = {
-  type: "notifications/cancelled";
+  method: "notifications/cancelled";
   params: BaseRequestParams & {
     requestId: string | number;
     reason?: string;
@@ -641,10 +693,10 @@ type ProgressNotification = {
 
 type ResourceListChangedNotification = {
   method: "notifications/resources/list_changed";
-  params: BaseRequestParams;
+  params?: BaseRequestParams;
 };
 
-type ResourceUpdatedNotification = {
+export type ResourceUpdatedNotification = {
   method: "notifications/resources/updated";
   params: BaseRequestParams & {
     uri: string;
@@ -653,15 +705,15 @@ type ResourceUpdatedNotification = {
 
 type PromptListChangedNotification = {
   method: "notifications/prompts/list_changed";
-  params: BaseRequestParams;
+  params?: BaseRequestParams;
 };
 
 type ToolListChangedNotification = {
   method: "notifications/tools/list_changed";
-  params: BaseRequestParams;
+  params?: BaseRequestParams;
 };
 
-type LoggingMessageNotification = {
+export type LoggingMessageNotification = {
   method: "notifications/message";
   params: BaseRequestParams & {
     level: LoggingLevel;
@@ -672,7 +724,7 @@ type LoggingMessageNotification = {
 
 type RootsListChangedNotification = {
   method: "notifications/roots/list_changed";
-  params: BaseRequestParams;
+  params?: BaseRequestParams;
 };
 
 // Client
@@ -698,7 +750,11 @@ export type ClientNotification =
   | InitializedNotification
   | RootsListChangedNotification;
 
-export type ClientResult = CreateMessageResult | ElicitResult | ListRootsResult;
+export type ClientResult =
+  | BaseResult
+  | CreateMessageResult
+  | ElicitResult
+  | ListRootsResult;
 
 // Server
 

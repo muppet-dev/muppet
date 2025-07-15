@@ -9,6 +9,10 @@ import type {
 } from "./types";
 
 export const ErrorCode = {
+  // SDK error codes
+  ConnectionClosed: -32000,
+  RequestTimeout: -32001,
+
   // Standard JSON-RPC error codes
   ParseError: -32700,
   InvalidRequest: -32600,
@@ -16,6 +20,17 @@ export const ErrorCode = {
   InvalidParams: -32602,
   InternalError: -32603,
 };
+
+export class McpError extends Error {
+  constructor(
+    public code: number,
+    message: string,
+    public readonly data?: unknown,
+  ) {
+    super(`MCP error ${code}: ${message}`);
+    this.name = "McpError";
+  }
+}
 
 export const compose = <E extends Env>(
   middleware: H<E>[],

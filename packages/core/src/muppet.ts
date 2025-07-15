@@ -1,13 +1,13 @@
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { toJsonSchema } from "@standard-community/standard-json";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
-import type { I, O } from "vitest/dist/chunks/reporters.d.CqBhtcTq.js";
-import { z } from "zod";
 import { Context } from "./context";
 import type {
   BaseResult,
   BlankEnv,
+  ClientNotification,
   ClientRequest,
+  CompletionFn,
   Env,
   ErrorHandler,
   H,
@@ -28,8 +28,8 @@ import type {
   ResourceMiddlewareHandler,
   ResourceOptions,
   ResourceTemplate,
+  ResourceTemplateOptions,
   RouterRoute,
-  SanitizedResourceOptions,
   SanitizedToolOptions,
   ServerCapabilities,
   ServerResult,
@@ -53,6 +53,11 @@ export class Muppet<E extends Env = BlankEnv> {
   #id!: string;
   routes: RouterRoute = [];
   transport!: Transport;
+
+  #notificationHanler: Map<
+    ClientNotification["method"],
+    (message: ClientNotification) => void
+  > = new Map();
 
   constructor(options?: Partial<MuppetOptions>) {
     if (options) {
@@ -78,6 +83,7 @@ export class Muppet<E extends Env = BlankEnv> {
         ? Number(err.code)
         : ErrorCode.InternalError,
       message: err.message ?? "Internal error",
+      data: "data" in err ? err.data : undefined,
     };
   };
 
@@ -186,8 +192,16 @@ export class Muppet<E extends Env = BlankEnv> {
     return this;
   }
 
-  resource(
-    args1: ResourceOptions | ResourceHandler<E> | ResourceMiddlewareHandler<E>,
+  resource<
+    I extends Record<string, StandardSchemaV1> = Record<
+      string,
+      StandardSchemaV1
+    >,
+  >(
+    args1:
+      | ResourceOptions<E, I>
+      | ResourceHandler<E>
+      | ResourceMiddlewareHandler<E>,
     ...args: (ResourceHandler<E> | ResourceMiddlewareHandler<E>)[]
   ) {
     if (typeof args1 === "object" && !Array.isArray(args1)) {
@@ -221,8 +235,16 @@ export class Muppet<E extends Env = BlankEnv> {
     return this;
   }
 
+  onNotification(
+    method: ClientNotification["method"],
+    handler: (message: ClientNotification) => void,
+  ) {
+    this.#notificationHanler.set(method, handler);
+    return this;
+  }
+
   async dispatch(
-    message: ClientRequest,
+    message: ClientRequest | ClientNotification,
     options: { context: Context<E, ClientRequest, ServerResult> },
   ): Promise<ServerResult | void> {
     try {
@@ -277,6 +299,21 @@ export class Muppet<E extends Env = BlankEnv> {
           },
           capabilities,
         };
+      }
+
+      if (
+        message.method === "notifications/cancelled" ||
+        message.method === "notifications/progress" ||
+        message.method === "notifications/initialized" ||
+        message.method === "notifications/roots/list_changed"
+      ) {
+        const handler = this.#notificationHanler.get(message.method);
+
+        if (handler) {
+          handler(message);
+        }
+
+        return;
       }
 
       if (message.method === "ping") {
@@ -362,7 +399,7 @@ export class Muppet<E extends Env = BlankEnv> {
 
         if (!context.finalized) {
           throw new Error(
-            "Context is not finalized. Did you forget to return a Response object or `await next()`?",
+            "Context is not finalized. Did you forget to return a Result object or `await next()`?",
           );
         }
 
@@ -449,7 +486,7 @@ export class Muppet<E extends Env = BlankEnv> {
 
         if (!context.finalized) {
           throw new Error(
-            "Context is not finalized. Did you forget to return a Response object or `await next()`?",
+            "Context is not finalized. Did you forget to return a Result object or `await next()`?",
           );
         }
 
@@ -491,13 +528,177 @@ export class Muppet<E extends Env = BlankEnv> {
       }
 
       if (message.method === "resources/read") {
-        // TODO: Implement
-        return;
+        const resource = this.routes.find((route) =>
+          route.type === "resource" && route.uri === message.params.uri
+        );
+
+        let middlewares: any[] = [];
+        let variables: Record<string, unknown> = {};
+
+        if (resource) {
+          middlewares = this.routes.filter(
+            (route) =>
+              route.type === "middleware" &&
+              (route.name === resource.name || route.name === "*"),
+          );
+        } else {
+          let resourceTemplate: ResourceTemplateOptions | undefined;
+
+          for (const route of this.routes) {
+            if (route.type !== "resource-template") continue;
+
+            // This checks if the uriTemplate is a match for the uri
+            // Eg - /users/:id matches /users/123
+            // Eg - /users/:id/details matches /users/123/details
+            const uriTemplate = route.uriTemplate;
+            const uri = message.params.uri;
+
+            const uriTemplateRegex = new RegExp(
+              uriTemplate.replace(/:(\w+)/g, "([^/]+)"),
+            );
+            const match = uri.match(uriTemplateRegex);
+
+            if (match) {
+              resourceTemplate = route;
+              // Arrange the match into a map of variable names to values
+              variables = Object.fromEntries(
+                match.slice(1).map((value) => {
+                  const key = uriTemplate.match(/:(\w+)/)?.[1];
+
+                  return [key, value];
+                }),
+              );
+
+              if (resourceTemplate.arguments) {
+                for (
+                  const [key, value] of Object.entries(
+                    resourceTemplate.arguments,
+                  )
+                ) {
+                  const validationResponse = await value.validation[
+                    "~standard"
+                  ].validate(variables[key]);
+
+                  if (validationResponse.issues) {
+                    options.context.error = {
+                      code: ErrorCode.InvalidParams,
+                      message: `Argument validation failed for ${key}`,
+                      data: validationResponse.issues,
+                    };
+
+                    return;
+                  }
+
+                  variables[key] = validationResponse.value;
+                }
+              }
+
+              break;
+            }
+          }
+
+          if (resourceTemplate) {
+            middlewares = this.routes.filter((route) =>
+              route.type === "middleware" &&
+              (route.name === resourceTemplate.name || route.name === "*")
+            );
+          }
+        }
+
+        if (middlewares.length === 0) {
+          options.context.error = {
+            code: ErrorCode.InvalidParams,
+            message: "Resource not found",
+          };
+
+          return;
+        }
+
+        if (Object.keys(variables).length > 0) {
+          options.context.message = {
+            ...message,
+            params: {
+              ...message.params,
+              arguments: variables,
+            },
+          };
+        }
+
+        const context = await compose(
+          middlewares,
+          this.#errorHandler,
+          this.#notFoundHandler,
+        )(options.context);
+
+        if (!context.finalized) {
+          throw new Error(
+            "Context is not finalized. Did you forget to return a Result object or `await next()`?",
+          );
+        }
+
+        return context.result;
       }
 
       if (message.method === "completion/complete") {
-        // TODO: Implement
-        return;
+        let completionFn: CompletionFn<any> | undefined;
+
+        if (message.params.ref.type === "ref/prompt") {
+          const promptName = message.params.ref.name;
+
+          const promptOptions = this.routes.find((route) =>
+            route.type === "prompt" && route.name === promptName
+          );
+
+          if (promptOptions?.type === "prompt") {
+            completionFn = promptOptions.arguments
+              ?.[message.params.argument.name]?.completion;
+          }
+        } else if (message.params.ref.type === "ref/resource") {
+          const resourceURI = message.params.ref.uri;
+
+          const resourceOptions = this.routes.find((route) =>
+            route.type === "resource-template" &&
+            route.uriTemplate === resourceURI
+          );
+
+          if (resourceOptions?.type === "resource-template") {
+            completionFn = resourceOptions.arguments
+              ?.[message.params.argument.name]?.completion;
+          }
+        }
+
+        if (!completionFn) {
+          options.context.error = {
+            code: ErrorCode.InvalidParams,
+            message:
+              `No completion function found for ${message.params.ref.type}`,
+          };
+
+          return;
+        }
+
+        const values = await completionFn(
+          message.params.argument.value,
+          options.context as any,
+        );
+
+        if (Array.isArray(values)) {
+          return {
+            completion: {
+              values: values as string[],
+              total: values.length,
+              hasMore: false,
+            },
+          };
+        }
+
+        return {
+          completion: {
+            values: values.values as string[],
+            total: values.total,
+            hasMore: values.hasMore,
+          },
+        };
       }
 
       this.#notFoundHandler(options.context);
@@ -555,37 +756,3 @@ export class Muppet<E extends Env = BlankEnv> {
     return transport.start();
   }
 }
-
-const mcp = new Muppet();
-
-mcp.prompt(
-  {
-    name: "get-prompt",
-    description: "Get a prompt",
-    arguments: {
-      prompt: {
-        validation: z.string(),
-        completion: async (value, ctx) => {
-          return ["Aditya"];
-        },
-      },
-    },
-  },
-  async (ctx, next) => {
-    ctx.message.params.arguments;
-    await next();
-  },
-  async (ctx, next) => {
-    return {
-      messages: [
-        {
-          role: "user",
-          content: {
-            type: "text",
-            text: "Hello, world!",
-          },
-        },
-      ],
-    };
-  },
-);
