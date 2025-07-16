@@ -54,7 +54,7 @@ const TEMPLATE_NAME_MAP: Record<string, string | undefined> = {
   // Classic SSE Templates
   "nodejs:classic-sse": "with-sse-express",
   // Hono Streaming Templates
-  "bun:streaming": "muppet-hono",
+  "bun:streaming": "with-streaming",
 };
 
 type DownloadOptions = {

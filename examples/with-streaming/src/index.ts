@@ -36,7 +36,4 @@ app.all("/mcp", async (c) => {
 
 app.get("/", (c) => c.text("Hello World"));
 
-export default {
-  fetch: app.fetch,
-  port: 3005,
-};
+export default app;
