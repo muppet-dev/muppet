@@ -1,9 +1,7 @@
-import { Hono } from "hono";
 import { StreamableHTTPTransport } from "@hono/mcp";
+import { Hono } from "hono";
 import { Muppet } from "muppet";
 import { z } from "zod";
-
-const app = new Hono();
 
 const mcp = new Muppet<{ Variables: { surname: string } }>({
   name: "muppet-hono",
@@ -16,9 +14,6 @@ mcp.tool({
   inputSchema: z.object({
     name: z.string(),
   }),
-}, async (_c, next) => {
-  // Do something here...
-  await next();
 }, (c) => {
   const name = c.message.params.arguments.name;
   return {
@@ -30,6 +25,8 @@ mcp.tool({
     ],
   };
 });
+
+const app = new Hono();
 
 app.all("/mcp", async (c) => {
   const transport = new StreamableHTTPTransport();

@@ -1,9 +1,7 @@
 {
   "imports": {
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.7.0",
-    "@hono/standard-validator": "npm:@hono/standard-validator@^0.1.2",
-    "hono": "npm:hono@^4.7.5",
-    "muppet": "npm:muppet@latest",
+    "muppet": "npm:muppet@workspace:*",
     "zod": "npm:zod@3.24.2"
   },
   "tasks": {

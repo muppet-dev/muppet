@@ -5,3 +5,5 @@ dist
 bin
 
 deno.lock
+
+.DS_Store

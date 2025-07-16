@@ -9,7 +9,6 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
     "express": "^4.21.2",
-    "hono": "^4.7.4",
     "muppet": "workspace:*",
     "zod": "^3.24.2"
   },
@@ -23,7 +22,9 @@
   "nx": {
     "targets": {
       "build": {
-        "dependsOn": ["^build"]
+        "dependsOn": [
+          "^build"
+        ]
       }
     }
   }

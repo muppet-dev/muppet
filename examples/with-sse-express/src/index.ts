@@ -1,48 +1,30 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
-import { Hono } from "hono";
-import {
-  type ToolResponseType,
-  bridge,
-  describeTool,
-  mValidator,
-  muppet,
-} from "muppet";
+import { Muppet } from "muppet";
 import z from "zod";
 
-const app = new Hono();
+const mcp = new Muppet({
+  name: "My Muppet",
+  version: "1.0.0",
+});
 
 /**
  * This is a simple 'hello world', which takes a name as input and returns a greeting
  */
-app.post(
-  "/hello",
-  describeTool({
-    name: "greet-user-with-hello",
-    description:
-      "This will take in the name of the user and greet them. eg. Hello John",
+mcp.tool({
+  name: "greet-user-with-hello",
+  description:
+    "This will take in the name of the user and greet them. eg. Hello John",
+  inputSchema: z.object({
+    name: z.string(),
   }),
-  mValidator(
-    "json",
-    z.object({
-      name: z.string().optional(),
-    }),
-  ),
-  (c) => {
-    const payload = c.req.valid("json");
-    return c.json<ToolResponseType>([
-      {
-        type: "text",
-        text: `Hello ${payload.name ?? "World"}!`,
-      },
-    ]);
-  },
-);
-
-// Creating a mcp using muppet
-const mcp = muppet(app, {
-  name: "My Muppet",
-  version: "1.0.0",
+}, (c) => {
+  return {
+    content: [{
+      type: "text",
+      text: `Hello ${c.message.params.arguments.name}!`,
+    }],
+  };
 });
 
 let transport: SSEServerTransport | null = null;
@@ -53,11 +35,8 @@ server.get("/sse", async (_, res) => {
   // Initialize the transport
   transport = new SSEServerTransport("/messages", res);
 
-  // Bridge the mcp with the transport
-  bridge({
-    mcp,
-    transport,
-  });
+  // Connect the mcp with the transport
+  mcp.connect(transport);
 });
 
 /**

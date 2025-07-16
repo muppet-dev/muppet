@@ -190,9 +190,6 @@ importers:
       express:
         specifier: ^4.21.2
         version: 4.21.2
-      hono:
-        specifier: ^4.7.4
-        version: 4.7.4
       muppet:
         specifier: workspace:*
         version: link:../../packages/core
@@ -221,9 +218,6 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.7.0
-      hono:
-        specifier: 4.7.4
-        version: 4.7.4
       muppet:
         specifier: workspace:*
         version: link:../../packages/core
@@ -265,9 +259,6 @@ importers:
       pkgroll:
         specifier: ^2.5.1
         version: 2.11.2(typescript@5.8.2)
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.2
 
   packages/create-muppet:
     devDependencies:
