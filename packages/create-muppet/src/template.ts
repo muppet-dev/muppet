@@ -2,9 +2,9 @@ import type { Option } from "@clack/prompts";
 import { downloadTemplate } from "giget";
 
 export const TRANSPORT_LAYERS = {
-  SSE: {
-    label: "The SSE Transport from muppet",
-    value: "sse",
+  STREAMING: {
+    label: "The HTTP Streaming Transport from muppet",
+    value: "streaming",
     hint: "recommended",
   },
   STDIO: {
@@ -25,11 +25,11 @@ export const RUNTIMES_BY_TRANSPORT_LAYER: Record<
   string,
   (string | Option<string>)[]
 > = {
-  [TRANSPORT_LAYERS.STDIO.value]: ["bun", "deno", "nodejs"],
+  [TRANSPORT_LAYERS.STDIO.value]: ["bun", "nodejs", "deno"],
   [TRANSPORT_LAYERS.CLASSIC_SSE.value]: [
     { label: "express.js x hono x nodejs", value: "nodejs" },
   ],
-  [TRANSPORT_LAYERS.SSE.value]: ["bun", "cloudflare-workers", "deno", "nodejs"],
+  [TRANSPORT_LAYERS.STREAMING.value]: ["bun"],
 };
 
 export const ALL_UNIQUE_TEMPLATES = Array.from(
@@ -53,11 +53,8 @@ const TEMPLATE_NAME_MAP: Record<string, string | undefined> = {
   "nodejs:stdio": "with-stdio",
   // Classic SSE Templates
   "nodejs:classic-sse": "with-sse-express",
-  // Hono SSE Templates
-  "bun:sse": "bun-sse",
-  "cloudflare-workers:sse": "cloudflare-workers-sse",
-  "deno:sse": "deno-sse",
-  "nodejs:sse": "nodejs-sse",
+  // Hono Streaming Templates
+  "bun:streaming": "with-streaming",
 };
 
 type DownloadOptions = {
@@ -72,8 +69,9 @@ export function download(options: DownloadOptions) {
 
   const template = TEMPLATE_NAME_MAP[`${runtime}:${transport}`];
 
-  if (!template)
+  if (!template) {
     throw new Error(`No template found for ${runtime}:${transport}`);
+  }
 
   return downloadTemplate(`gh:muppet-dev/muppet/examples/${template}`, {
     dir,

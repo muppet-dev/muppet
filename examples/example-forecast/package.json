@@ -7,10 +7,7 @@
     "build": "pkgroll --minify"
   },
   "dependencies": {
-    "@hono/node-server": "^1.14.0",
-    "@hono/standard-validator": "^0.1.2",
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "hono": "^4.7.4",
     "muppet": "workspace:*",
     "zod": "^3.24.2"
   },
@@ -19,14 +16,5 @@
     "pkgroll": "^2.11.2",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
-  },
-  "nx": {
-    "targets": {
-      "build": {
-        "dependsOn": [
-          "^build"
-        ]
-      }
-    }
   }
 }

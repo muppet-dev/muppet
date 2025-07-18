@@ -7,12 +7,11 @@
     "format": "biome check --write ."
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.1.1",
     "czg": "^1.11.1",
     "husky": "^9.1.7",
     "is-ci": "^4.1.0",
     "nano-staged": "^0.8.0",
-    "nx": "^20.6.2",
     "typescript": "^5.8.2",
     "vitest": "^3.0.9"
   },

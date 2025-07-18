@@ -1,7 +1,8 @@
 node_modules
 dist
-.nx
 
 bin
 
 deno.lock
+
+.DS_Store

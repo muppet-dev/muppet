@@ -17,17 +17,3 @@ To get started, make sure you have [pnpm](https://pnpm.io/) installed. Then, clo
 ```bash
 pnpm install
 ```
-
-To start the docs server, run:
-
-```bash
-pnpm nx dev docs
-```
-
-This will start the documentation server at `http://localhost:3000`.
-
-For building the documentation for production, run:
-
-```bash
-pnpm nx build docs
-```

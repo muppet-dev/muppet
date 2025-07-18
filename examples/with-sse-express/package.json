@@ -9,7 +9,6 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
     "express": "^4.21.2",
-    "hono": "^4.7.4",
     "muppet": "workspace:*",
     "zod": "^3.24.2"
   },
@@ -19,12 +18,5 @@
     "pkgroll": "^2.11.2",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
-  },
-  "nx": {
-    "targets": {
-      "build": {
-        "dependsOn": ["^build"]
-      }
-    }
   }
 }
