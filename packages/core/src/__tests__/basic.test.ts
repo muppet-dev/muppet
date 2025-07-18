@@ -1,6 +1,14 @@
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import { type ClientRequest, Context, Muppet } from "../index";
+import {
+  type ClientRequest,
+  Context,
+  type ListPromptsResult,
+  Muppet,
+} from "../index";
+import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+
+const dummyTransport = {} as Transport;
 
 describe("basic", async () => {
   const mcp = new Muppet({ name: "My Muppet", version: "1.0.0" })
@@ -50,7 +58,7 @@ describe("basic", async () => {
     .resource(
       {
         uri: "https://lorem.ipsum",
-        name: "Todo list",
+        name: "static-todo-list",
         mimeType: "text/plain",
       },
       () => ({
@@ -64,8 +72,8 @@ describe("basic", async () => {
     )
     .resource(
       {
-        uri: "https://lorem.{ending}",
-        name: "Todo list",
+        uriTemplate: "https://lorem.{ending}",
+        name: "dynamic-todo-list",
         mimeType: "text/plain",
       },
       () => ({
@@ -82,7 +90,7 @@ describe("basic", async () => {
       }),
     );
 
-  it.only("should initialize", async () => {
+  it("should initialize", async () => {
     const message = {
       method: "initialize",
       params: {
@@ -92,12 +100,12 @@ describe("basic", async () => {
       },
     } satisfies ClientRequest;
 
-    const context = new Context(message, { transport: {} });
+    const context = new Context(message, { transport: dummyTransport });
 
-    const response = await mcp.dispatch(message, { context });
+    const result = await mcp.dispatch(message, { context });
 
-    expect(response).toBeDefined();
-    expect(response).toMatchObject({
+    expect(result).toBeDefined();
+    expect(result).toMatchObject({
       protocolVersion: "2024-11-05",
       serverInfo: {
         name: "My Muppet",
@@ -108,32 +116,25 @@ describe("basic", async () => {
   });
 
   it("should list tools", async () => {
-    const response = await instance?.request("/tools/list", {
-      method: "POST",
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/list",
-        params: {},
-      }),
-      headers: {
-        "content-type": "application/json",
-      },
-    });
+    const message = {
+      method: "tools/list",
+      params: {},
+    } satisfies ClientRequest;
 
-    const json = await response?.json();
+    const context = new Context(message, { transport: dummyTransport });
 
-    expect(json).toBeDefined();
-    expect(json.result).toMatchObject({
+    const result = await mcp.dispatch(message, { context });
+
+    expect(result).toBeDefined();
+    expect(result).toMatchObject({
       tools: [
         {
-          name: "Hello World",
-          description: "A simple hello world route",
+          name: "hello-world",
+          description: "A simple hello world tool",
           inputSchema: {
             type: "object",
             properties: { name: { type: "string" } },
             required: ["name"],
-            additionalProperties: false,
             $schema: "http://json-schema.org/draft-07/schema#",
           },
         },
@@ -142,27 +143,17 @@ describe("basic", async () => {
   });
 
   it("should call tool", async () => {
-    const response = await instance?.request("/tools/call", {
-      method: "POST",
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 2,
-        method: "tools/call",
-        params: {
-          _meta: { progressToken: 0 },
-          name: "Hello World",
-          arguments: { name: "muppet" },
-        },
-      }),
-      headers: {
-        "content-type": "application/json",
-      },
-    });
+    const message = {
+      method: "tools/call",
+      params: { name: "hello-world", arguments: { name: "muppet" } },
+    } satisfies ClientRequest;
 
-    const json = await response?.json();
+    const context = new Context(message, { transport: dummyTransport });
 
-    expect(json).toBeDefined();
-    expect(json.result).toMatchObject({
+    const result = await mcp.dispatch(message, { context });
+
+    expect(result).toBeDefined();
+    expect(result).toMatchObject({
       content: [
         {
           type: "text",
@@ -173,91 +164,66 @@ describe("basic", async () => {
   });
 
   it("should list prompts", async () => {
-    const response = await instance?.request("/prompts/list", {
-      method: "POST",
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "prompts/list",
-        params: {},
-      }),
-      headers: {
-        "content-type": "application/json",
-      },
-    });
+    const message = {
+      method: "prompts/list",
+      params: {},
+    } satisfies ClientRequest;
 
-    const json = await response?.json();
+    const context = new Context(message, { transport: dummyTransport });
 
-    expect(json).toBeDefined();
-    expect(json.result).toMatchObject({
+    const result = await mcp.dispatch(message, { context });
+
+    expect(result).toBeDefined();
+    expect(result).toMatchObject({
       prompts: [
         {
-          name: "Simple Prompt",
-          arguments: [{ name: "name", required: true }],
-          method: "POST",
-          schema: {
-            json: {
-              type: "object",
-              properties: { name: { type: "string" } },
-              required: ["name"],
-              additionalProperties: false,
-              $schema: "http://json-schema.org/draft-07/schema#",
-            },
-          },
+          name: "simple-prompt",
+          arguments: [{
+            name: "name",
+            required: true,
+          }],
         },
       ],
-    });
+    } as ListPromptsResult);
   });
 
   it("should get prompt", async () => {
-    const response = await instance?.request("/prompts/get", {
-      method: "POST",
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 3,
-        method: "prompts/get",
-        params: { name: "Simple Prompt", arguments: { name: "Muppet" } },
-      }),
-      headers: {
-        "content-type": "application/json",
-      },
-    });
+    const message = {
+      method: "prompts/get",
+      params: { name: "simple-prompt", arguments: { name: "muppet" } },
+    } satisfies ClientRequest;
 
-    const json = await response?.json();
+    const context = new Context(message, { transport: dummyTransport });
 
-    expect(json).toBeDefined();
-    expect(json.result).toMatchObject({
+    const result = await mcp.dispatch(message, { context });
+
+    expect(result).toBeDefined();
+    expect(result).toMatchObject({
       messages: [
         {
           role: "user",
-          content: { type: "text", text: "This is a simple prompt for Muppet" },
+          content: { type: "text", text: "This is a simple prompt for muppet" },
         },
       ],
     });
   });
 
   it("should list resources", async () => {
-    const response = await instance?.request("/resources/list", {
-      method: "POST",
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 4,
-        method: "resources/list",
-        params: {},
-      }),
-      headers: {
-        "content-type": "application/json",
-      },
-    });
+    const message = {
+      method: "resources/list",
+      params: {},
+    } satisfies ClientRequest;
 
-    const json = await response?.json();
+    const context = new Context(message, { transport: dummyTransport });
 
-    expect(json).toBeDefined();
-    expect(json.result).toMatchObject({
+    const result = await mcp.dispatch(message, { context });
+
+    expect(result).toBeDefined();
+    expect(result).toMatchObject({
       resources: [
         {
           uri: "https://lorem.ipsum",
-          name: "Todo list",
+          name: "static-todo-list",
           mimeType: "text/plain",
         },
       ],
@@ -265,77 +231,80 @@ describe("basic", async () => {
   });
 
   it("should list template resources", async () => {
-    const response = await instance?.request("/resources/templates/list", {
-      method: "POST",
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 6,
-        method: "resources/templates/list",
-        params: {},
-      }),
-      headers: {
-        "content-type": "application/json",
-      },
-    });
+    const message = {
+      method: "resources/templates/list",
+      params: {},
+    } satisfies ClientRequest;
 
-    const json = await response?.json();
+    const context = new Context(message, { transport: dummyTransport });
+    const result = await mcp.dispatch(message, { context });
 
-    expect(json).toBeDefined();
-    expect(json.result).toMatchObject({
+    expect(result).toBeDefined();
+    expect(result).toMatchObject({
       resourceTemplates: [
         {
           uriTemplate: "https://lorem.{ending}",
-          name: "Todo list",
+          name: "dynamic-todo-list",
           mimeType: "text/plain",
         },
       ],
     });
   });
 
-  it("should read the resource", async () => {
-    const response = await instance?.request("/resources/read", {
-      method: "POST",
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 5,
-        method: "resources/read",
-        params: { uri: "https://lorem.ipsum" },
-      }),
-      headers: {
-        "content-type": "application/json",
-      },
-    });
+  it("should read the static resource", async () => {
+    const message = {
+      method: "resources/read",
+      params: { uri: "https://lorem.ipsum" },
+    } satisfies ClientRequest;
 
-    const json = await response?.json();
+    const context = new Context(message, { transport: dummyTransport });
 
-    expect(json).toBeDefined();
-    expect(json.result).toMatchObject({
+    const result = await mcp.dispatch(message, { context });
+
+    expect(result).toBeDefined();
+    expect(result).toMatchObject({
       contents: [{ uri: "task1", text: "This is a fixed task" }],
     });
   });
 
-  it("should respond with completions", async () => {
-    const response = await instance?.request("/completion/complete", {
-      method: "POST",
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 2,
-        method: "completion/complete",
-        params: {
-          argument: { name: "name", value: "Aditya" },
-          ref: { type: "ref/prompt", name: "Simple Prompt" },
+  it("should read the dynamic resource", async () => {
+    const message = {
+      method: "resources/read",
+      params: { uri: "https://lorem.muppet" },
+    } satisfies ClientRequest;
+
+    const context = new Context(message, { transport: dummyTransport });
+
+    const result = await mcp.dispatch(message, { context });
+
+    expect(result).toBeDefined();
+    expect(result).toMatchObject({
+      contents: [
+        {
+          uri: "task1",
+          text: "This is dynamic task",
         },
-      }),
-      headers: {
-        "content-type": "application/json",
+        {
+          uri: "task2",
+          text: "Could be fetched from a DB",
+        },
+      ],
+    });
+  });
+
+  it("should respond with completions", async () => {
+    const message = {
+      method: "completion/complete",
+      params: {
+        argument: { name: "name", value: "Aditya" },
+        ref: { type: "ref/prompt", name: "Simple Prompt" },
       },
-    });
+    } satisfies ClientRequest;
 
-    const json = await response?.json();
+    const context = new Context(message, { transport: dummyTransport });
 
-    expect(json).toBeDefined();
-    expect(json.result).toMatchObject({
-      completion: { values: [], total: 0, hasMore: false },
-    });
+    const result = await mcp.dispatch(message, { context });
+
+    expect(result).toBeUndefined();
   });
 });

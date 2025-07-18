@@ -457,7 +457,7 @@ export type ReadResourceRequest<
   method: "resources/read";
   params: BaseRequestParams & {
     uri: string;
-    arguments: {
+    arguments?: {
       [K in keyof I]: StandardSchemaV1.InferOutput<I[K]>;
     };
   };

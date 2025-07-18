@@ -36,7 +36,7 @@ export const compose = <E extends Env>(
   middleware: H<E>[],
   onError?: ErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>,
-): ((context: Context<E>, next?: Next) => Promise<Context<E>>) => {
+): (context: Context<E>, next?: Next) => Promise<Context<E>> => {
   return (context, next) => {
     let index = -1;
 
@@ -55,7 +55,7 @@ export const compose = <E extends Env>(
       }
       index = i;
 
-      let res: ServerResult | undefined;
+      let res: ServerResult | undefined | void;
       let isError = false;
       let handler: H<E> | undefined;
 

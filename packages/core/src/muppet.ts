@@ -17,21 +17,19 @@ import type {
   ListResourceTemplatesResult,
   ListToolsResult,
   MCPError,
+  MiddlewareOptions,
   NotFoundHandler,
   Prompt,
   PromptArgument,
   PromptHandler,
   PromptMiddlewareHandler,
   PromptOptions,
-  Resource,
   ResourceHandler,
   ResourceMiddlewareHandler,
   ResourceOptions,
-  ResourceTemplate,
   ResourceTemplateOptions,
   RouterRoute,
   SanitizedPromptOptions,
-  SanitizedResourceOptions,
   SanitizedResourceTemplateOptions,
   SanitizedSimpleResourceOptions,
   SanitizedToolOptions,
@@ -215,8 +213,8 @@ export class Muppet<E extends Env = BlankEnv> {
       this.routes.push(
         // @ts-expect-error
         {
-          type,
           ...args1,
+          type,
         },
       );
     } else {
@@ -456,26 +454,24 @@ export class Muppet<E extends Env = BlankEnv> {
 
         return {
           prompts: await Promise.all(
-            prompts.map<Promise<Prompt>>(async (prompt) => {
-              return {
-                name: prompt.name,
-                title: prompt.title,
-                description: prompt.description,
-                arguments: await Promise.all(
-                  Object.entries(prompt.arguments ?? {}).map<
-                    Promise<PromptArgument>
-                  >(async ([key, value]) => {
-                    const jsonSchema = await toJsonSchema(value.validation);
+            prompts.map<Promise<Prompt>>(async (prompt) => ({
+              name: prompt.name,
+              title: prompt.title,
+              description: prompt.description,
+              arguments: await Promise.all(
+                Object.entries(prompt.arguments ?? {}).map<
+                  Promise<PromptArgument>
+                >(async ([key, value]) => {
+                  const jsonSchema = await toJsonSchema(value.validation);
 
-                    return {
-                      name: key,
-                      description: jsonSchema.description,
-                      required: jsonSchema.required?.includes(key),
-                    };
-                  }),
-                ),
-              };
-            }),
+                  return {
+                    name: key,
+                    description: jsonSchema.description,
+                    required: jsonSchema.required?.includes(key) ?? true,
+                  };
+                }),
+              ),
+            })),
           ),
         } satisfies ListPromptsResult;
       }
@@ -593,7 +589,7 @@ export class Muppet<E extends Env = BlankEnv> {
             route.type === "resource" && route.uri === message.params.uri,
         );
 
-        let middlewares: any[] = [];
+        let middlewares: MiddlewareOptions["handler"][] = [];
         let variables: Record<string, unknown> = {};
 
         if (resource) {
@@ -606,11 +602,14 @@ export class Muppet<E extends Env = BlankEnv> {
             return;
           }
 
-          middlewares = this.routes.filter(
-            (route) =>
+          for (const route of this.routes) {
+            if (
               route.type === "middleware" &&
-              (route.name === resource.name || route.name === "*"),
-          );
+              (route.name === resource.name || route.name === "*")
+            ) {
+              middlewares.push(route.handler);
+            }
+          }
         } else {
           let resourceTemplate: ResourceTemplateOptions | undefined;
 
@@ -668,11 +667,14 @@ export class Muppet<E extends Env = BlankEnv> {
           }
 
           if (resourceTemplate) {
-            middlewares = this.routes.filter(
-              (route) =>
+            for (const route of this.routes) {
+              if (
                 route.type === "middleware" &&
-                (route.name === resourceTemplate.name || route.name === "*"),
-            );
+                (route.name === resourceTemplate.name || route.name === "*")
+              ) {
+                middlewares.push(route.handler);
+              }
+            }
           }
         }
 
