@@ -52,7 +52,7 @@ export class Muppet<E extends Env = BlankEnv> {
 
   #id!: string;
   routes: RouterRoute = [];
-  transport!: Transport;
+  transport?: Transport;
 
   #notificationHanler: Map<
     ClientNotification["method"],
@@ -234,6 +234,10 @@ export class Muppet<E extends Env = BlankEnv> {
 
     return this;
   }
+
+  enable(name: string) {}
+
+  disable(name: string) {}
 
   onNotification(
     method: ClientNotification["method"],
@@ -528,8 +532,9 @@ export class Muppet<E extends Env = BlankEnv> {
       }
 
       if (message.method === "resources/read") {
-        const resource = this.routes.find((route) =>
-          route.type === "resource" && route.uri === message.params.uri
+        const resource = this.routes.find(
+          (route) =>
+            route.type === "resource" && route.uri === message.params.uri,
         );
 
         let middlewares: any[] = [];
@@ -598,9 +603,10 @@ export class Muppet<E extends Env = BlankEnv> {
           }
 
           if (resourceTemplate) {
-            middlewares = this.routes.filter((route) =>
-              route.type === "middleware" &&
-              (route.name === resourceTemplate.name || route.name === "*")
+            middlewares = this.routes.filter(
+              (route) =>
+                route.type === "middleware" &&
+                (route.name === resourceTemplate.name || route.name === "*"),
             );
           }
         }
@@ -645,25 +651,28 @@ export class Muppet<E extends Env = BlankEnv> {
         if (message.params.ref.type === "ref/prompt") {
           const promptName = message.params.ref.name;
 
-          const promptOptions = this.routes.find((route) =>
-            route.type === "prompt" && route.name === promptName
+          const promptOptions = this.routes.find(
+            (route) => route.type === "prompt" && route.name === promptName,
           );
 
           if (promptOptions?.type === "prompt") {
             completionFn = promptOptions.arguments
-              ?.[message.params.argument.name]?.completion;
+              ?.[message.params.argument.name]
+              ?.completion;
           }
         } else if (message.params.ref.type === "ref/resource") {
           const resourceURI = message.params.ref.uri;
 
-          const resourceOptions = this.routes.find((route) =>
-            route.type === "resource-template" &&
-            route.uriTemplate === resourceURI
+          const resourceOptions = this.routes.find(
+            (route) =>
+              route.type === "resource-template" &&
+              route.uriTemplate === resourceURI,
           );
 
           if (resourceOptions?.type === "resource-template") {
             completionFn = resourceOptions.arguments
-              ?.[message.params.argument.name]?.completion;
+              ?.[message.params.argument.name]
+              ?.completion;
           }
         }
 
@@ -711,6 +720,12 @@ export class Muppet<E extends Env = BlankEnv> {
     message: JSONRPCRequest & ClientRequest,
     options?: { env?: E },
   ) {
+    if (!this.transport) {
+      throw new Error(
+        "Transport not connected! Call the .connect() method first",
+      );
+    }
+
     const context = new Context(message, {
       ...options,
       transport: this.transport,

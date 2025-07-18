@@ -11,21 +11,26 @@ const mcp = new Muppet({
 /**
  * This is a simple 'hello world', which takes a name as input and returns a greeting
  */
-mcp.tool({
-  name: "greet-user-with-hello",
-  description:
-    "This will take in the name of the user and greet them. eg. Hello John",
-  inputSchema: z.object({
-    name: z.string(),
-  }),
-}, (c) => {
-  return {
-    content: [{
-      type: "text",
-      text: `Hello ${c.message.params.arguments.name}!`,
-    }],
-  };
-});
+mcp.tool(
+  {
+    name: "greet-user-with-hello",
+    description:
+      "This will take in the name of the user and greet them. eg. Hello John",
+    inputSchema: z.object({
+      name: z.string(),
+    }),
+  },
+  (c) => {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Hello ${c.message.params.arguments.name}!`,
+        },
+      ],
+    };
+  },
+);
 
 let transport: SSEServerTransport | null = null;
 

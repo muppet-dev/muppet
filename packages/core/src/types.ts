@@ -28,19 +28,13 @@ type BaseHandler<
   E extends Env,
   M extends ClientRequest,
   R extends ServerResult,
-> = (
-  c: Context<E, M, R>,
-  next: Next,
-) => PromiseOr<R>;
+> = (c: Context<E, M, R>, next: Next) => PromiseOr<R>;
 
 type BaseMiddlewareHandler<
   E extends Env,
   M extends ClientRequest,
   R extends ServerResult,
-> = (
-  c: Context<E, M, R>,
-  next: Next,
-) => Promise<R | void>;
+> = (c: Context<E, M, R>, next: Next) => Promise<R | void>;
 
 export type ToolOptions<
   I extends StandardSchemaV1 = StandardSchemaV1,
@@ -58,11 +52,7 @@ export type ToolHandler<
   E extends Env,
   I extends StandardSchemaV1 = StandardSchemaV1,
   O extends StandardSchemaV1 = StandardSchemaV1,
-> = BaseHandler<
-  E,
-  CallToolRequest<I>,
-  CallToolResult<O>
->;
+> = BaseHandler<E, CallToolRequest<I>, CallToolResult<O>>;
 
 export type ToolMiddlewareHandler<
   E extends Env,
@@ -79,9 +69,9 @@ export type CompletionFn<
   context: Context<E, GetPromptRequest<I>, GetPromptResult>,
 ) => PromiseOr<
   | StandardSchemaV1.InferOutput<I[K]>[]
-  | Omit<CompleteResult["completion"], "values"> & {
-    values: StandardSchemaV1.InferOutput<I[K]>[];
-  }
+  | (Omit<CompleteResult["completion"], "values"> & {
+      values: StandardSchemaV1.InferOutput<I[K]>[];
+    })
 >;
 
 export type PromptArgumentWithCompletion<
@@ -109,11 +99,7 @@ export type SanitizedPromptOptions = PromptOptions & {
 export type PromptHandler<
   E extends Env,
   I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
-> = BaseHandler<
-  E,
-  GetPromptRequest<I>,
-  GetPromptResult
->;
+> = BaseHandler<E, GetPromptRequest<I>, GetPromptResult>;
 
 export type PromptMiddlewareHandler<
   E extends Env,
@@ -136,11 +122,11 @@ export type ResourceOptions<
 
 export type SanitizedResourceOptions =
   | ({
-    type: "resource";
-  } & Resource)
+      type: "resource";
+    } & Resource)
   | ({
-    type: "resource-template";
-  } & ResourceTemplateOptions);
+      type: "resource-template";
+    } & ResourceTemplateOptions);
 
 export type ResourceHandler<
   E extends Env,
@@ -333,16 +319,20 @@ export type ToolAnnotation = {
 
 export type Tool = BaseMetadata & {
   description?: string;
-  inputSchema: {
-    type: "object";
-    properties: Record<string, unknown>;
-    required?: string[];
-  } | JSONSchema7;
-  outputSchema?: {
-    type: "object";
-    properties: Record<string, unknown>;
-    required?: string[];
-  } | JSONSchema7;
+  inputSchema:
+    | {
+        type: "object";
+        properties: Record<string, unknown>;
+        required?: string[];
+      }
+    | JSONSchema7;
+  outputSchema?:
+    | {
+        type: "object";
+        properties: Record<string, unknown>;
+        required?: string[];
+      }
+    | JSONSchema7;
   annotations?: ToolAnnotation;
 };
 
@@ -359,8 +349,7 @@ export type CallToolRequest<T extends StandardSchemaV1 = StandardSchemaV1> = {
 };
 
 export type CallToolResult<T extends StandardSchemaV1 = StandardSchemaV1> =
-  & BaseResult
-  & {
+  BaseResult & {
     content: ContentBlock[];
     structuredContent?:
       | StandardSchemaV1.InferOutput<T>
@@ -602,12 +591,11 @@ export type ElicitRequestOptions<
   requestedSchema: I;
 };
 
-export type ElicitResult<
-  I extends StandardSchemaV1 = StandardSchemaV1,
-> = BaseResult & {
-  action: "accept" | "decline" | "cancel";
-  content?: StandardSchemaV1.InferOutput<I>;
-};
+export type ElicitResult<I extends StandardSchemaV1 = StandardSchemaV1> =
+  BaseResult & {
+    action: "accept" | "decline" | "cancel";
+    content?: StandardSchemaV1.InferOutput<I>;
+  };
 
 // Autocomplete
 

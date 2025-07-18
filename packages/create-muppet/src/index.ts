@@ -1,24 +1,25 @@
-import * as p from "@clack/prompts";
-import chalk from "chalk";
-import { type Command, Option, program } from "commander";
 import { exec } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { chdir, exit } from "node:process";
+import * as p from "@clack/prompts";
+import chalk from "chalk";
+import { type Command, Option, program } from "commander";
 import pkg from "../package.json" assert { type: "json" };
+
 import { cleanup } from "./cleanup";
 import { figureOutPackageManager } from "./package-manager";
 import {
   ALL_TRANSPORT_LAYERS,
   ALL_UNIQUE_TEMPLATES,
+  download,
   RUNTIMES_BY_TRANSPORT_LAYER,
   TRANSPORT_LAYERS,
-  download,
 } from "./template";
 import {
-  type PackageManager,
   knownPackageManagerNames,
   knownPackageManagers,
+  type PackageManager,
 } from "./utils";
 
 const IS_CURRENT_DIR_REGEX = /^(\.\/|\.\\|\.)$/;

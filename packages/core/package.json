@@ -1,7 +1,7 @@
 {
   "name": "muppet",
   "description": "Toolkit for building MCPs on Honojs",
-  "version": "0.3.0-rc.0",
+  "version": "0.3.0-rc.1",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.cjs",
@@ -35,11 +35,15 @@
     "url": "https://github.com/muppet-dev/muppet/issues"
   },
   "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.15.1",
     "@standard-community/standard-json": "^0.3.0-rc.1",
     "@standard-schema/spec": "^1.0.0",
     "file-type": "^20.5.0"
   },
   "peerDependenciesMeta": {
+    "@modelcontextprotocol/sdk": {
+      "optional": true
+    },
     "@standard-schema/spec": {
       "optional": true
     },
@@ -48,22 +52,19 @@
     }
   },
   "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+    "import": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "require": {
+      "types": "./dist/index.d.cts",
+      "default": "./dist/index.cjs"
     }
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.15.1",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^24.0.13",
     "file-type": "^20.5.0",
-    "pkgroll": "^2.5.1"
+    "pkgroll": "^2.5.1",
+    "valibot": "^1.1.0"
   }
 }

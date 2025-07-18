@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
+import { describe, expect, it } from "vitest";
 import z from "zod";
 import {
   describeTool,
+  muppet,
   mValidator,
   type ToolResponseType,
-  muppet,
 } from "../index";
 
 describe("tools", async () => {

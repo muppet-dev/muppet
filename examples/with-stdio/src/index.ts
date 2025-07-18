@@ -18,10 +18,12 @@ mcp.tool(
   },
   (c) => {
     return {
-      content: [{
-        type: "text",
-        text: `Hello ${c.message.params.arguments.name}!`,
-      }],
+      content: [
+        {
+          type: "text",
+          text: `Hello ${c.message.params.arguments.name}!`,
+        },
+      ],
     };
   },
 );

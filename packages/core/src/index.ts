@@ -1,4 +1,4 @@
-export { Muppet } from "./muppet";
 export { Context } from "./context";
-export type * from "./types";
 export * from "./helper";
+export { Muppet } from "./muppet";
+export type * from "./types";

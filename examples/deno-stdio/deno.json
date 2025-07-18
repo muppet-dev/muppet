@@ -1,7 +1,7 @@
 {
   "imports": {
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.7.0",
-    "muppet": "npm:muppet@workspace:*",
+    "muppet": "npm:muppet@^0.3.0-rc.0",
     "zod": "npm:zod@3.24.2"
   },
   "tasks": {

@@ -55,7 +55,10 @@ export class Context<
   #result: R | undefined;
   server: ContextServer;
 
-  constructor(public message: M, options: { env?: E; transport: Transport }) {
+  constructor(
+    public message: M,
+    options: { env?: E; transport: Transport },
+  ) {
     if (options.env) {
       this.#var = new Map(Object.entries(options.env.Variables ?? {}));
     }
@@ -78,9 +81,9 @@ export class Context<
   };
 
   get: Get<E> = (key) => {
-    return (this.#var ? this.#var.get(key) : undefined) as E["Variables"][
-      typeof key
-    ];
+    return (
+      this.#var ? this.#var.get(key) : undefined
+    ) as E["Variables"][typeof key];
   };
 
   get var(): Readonly<any> {
@@ -112,7 +115,7 @@ export class ContextServer {
   #responseHandlers: Map<
     number,
     <T extends ClientResult = ClientResult>(
-      response: JSONRPCRequest & { result: T } | Error,
+      response: (JSONRPCRequest & { result: T }) | Error,
     ) => void
   > = new Map();
 
@@ -154,10 +157,13 @@ export class ContextServer {
     params: CreateMessageRequest["params"],
     options?: RequestOptions,
   ) {
-    return this.request<CreateMessageResult>({
-      method: "sampling/createMessage",
-      params,
-    }, options);
+    return this.request<CreateMessageResult>(
+      {
+        method: "sampling/createMessage",
+        params,
+      },
+      options,
+    );
   }
 
   async elicitInput<I extends StandardSchemaV1 = StandardSchemaV1>(
@@ -180,15 +186,16 @@ export class ContextServer {
     // Validate the response content against the requested schema if action is "accept"
     if (result.action === "accept" && result.content) {
       try {
-        const validatedResponse = await params.requestedSchema["~standard"]
-          .validate(result.content);
+        const validatedResponse = await params.requestedSchema[
+          "~standard"
+        ].validate(result.content);
 
         if (validatedResponse.issues) {
           throw new McpError(
             ErrorCode.InvalidParams,
-            `Elicitation response content does not match requested schema: ${
-              validatedResponse.issues.map((issue) => issue.message).join(", ")
-            }`,
+            `Elicitation response content does not match requested schema: ${validatedResponse.issues
+              .map((issue) => issue.message)
+              .join(", ")}`,
           );
         }
       } catch (error) {
@@ -286,7 +293,7 @@ export class ContextServer {
           .catch((error) =>
             this.transport.onerror?.(
               new Error(`Failed to send cancellation: ${error}`),
-            )
+            ),
           );
 
         reject(reason);
@@ -315,11 +322,9 @@ export class ContextServer {
       const timeout = options?.timeout ?? 60000;
       const timeoutHandler = () =>
         cancel(
-          new McpError(
-            ErrorCode.RequestTimeout,
-            "Request timed out",
-            { timeout },
-          ),
+          new McpError(ErrorCode.RequestTimeout, "Request timed out", {
+            timeout,
+          }),
         );
 
       this.#setupTimeout(

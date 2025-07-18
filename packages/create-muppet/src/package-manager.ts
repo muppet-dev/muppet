@@ -1,10 +1,10 @@
 import { confirm, select } from "@clack/prompts";
 import { execa } from "execa";
 import {
-  type PackageManager,
   checkPackageManagerInstalled,
   getCurrentPackageManager,
   knownPackageManagerNames,
+  type PackageManager,
 } from "./utils";
 
 // Deno and Netlify need no dependency installation step

@@ -45,14 +45,14 @@ export function resourceLink(
 
 export type ContentOptions =
   | {
-    url: string;
-  }
+      url: string;
+    }
   | {
-    buffer: Buffer;
-  }
+      buffer: Buffer;
+    }
   | {
-    path: string;
-  };
+      path: string;
+    };
 
 export async function imageContent(
   content: ContentOptions,
@@ -114,9 +114,7 @@ async function loadFromUrl(url: string) {
   return fetch(url)
     .then(async (response) => {
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch ${url}: ${response.statusText}`,
-        );
+        throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
       }
 
       return Buffer.from(await response.arrayBuffer());

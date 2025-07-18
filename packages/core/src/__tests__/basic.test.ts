@@ -1,100 +1,75 @@
-import { describe, it, expect } from "vitest";
-import { Hono } from "hono";
-import z from "zod";
-import {
-  describeTool,
-  describePrompt,
-  mValidator,
-  type ToolResponseType,
-  registerResources,
-  type PromptResponseType,
-  muppet,
-} from "../index";
+import * as v from "valibot";
+import { describe, expect, it } from "vitest";
+import { type ClientRequest, Context, Muppet } from "../index";
 
 describe("basic", async () => {
-  const app = new Hono()
-    .post(
-      "/hello",
-      describeTool({
-        name: "Hello World",
-        description: "A simple hello world route",
-      }),
-      mValidator(
-        "json",
-        z.object({
-          name: z.string(),
+  const mcp = new Muppet({ name: "My Muppet", version: "1.0.0" })
+    .tool(
+      {
+        name: "hello-world",
+        description: "A simple hello world tool",
+        inputSchema: v.object({
+          name: v.string(),
         }),
-      ),
-      (c) => {
-        const payload = c.req.valid("json");
-        return c.json<ToolResponseType>([
-          {
-            type: "text",
-            text: `Hello ${payload.name}!`,
-          },
-        ]);
       },
-    )
-    .post(
-      "/documents",
-      registerResources((c) => {
-        return [
-          {
-            uri: "https://lorem.ipsum",
-            name: "Todo list",
-            mimeType: "text/plain",
-          },
-          {
-            type: "template",
-            uri: "https://lorem.{ending}",
-            name: "Todo list",
-            mimeType: "text/plain",
-          },
-        ];
-      }),
-    )
-    .post(
-      "/simple",
-      describePrompt({ name: "Simple Prompt" }),
-      mValidator(
-        "json",
-        z.object({
-          name: z.string(),
-        }),
-      ),
       (c) => {
-        const { name } = c.req.valid("json");
-        return c.json<PromptResponseType>([
-          {
-            role: "user",
-            content: {
-              type: "text",
-              text: `This is a simple prompt for ${name}`,
-            },
-          },
-        ]);
-      },
-    );
-
-  const serverInfo = {
-    name: "My Muppet",
-    version: "1.0.0",
-  };
-
-  // Creating a mcp using muppet
-  const instance = await muppet(app, {
-    ...serverInfo,
-    resources: {
-      https: (uri) => {
-        if (uri === "https://lorem.ipsum")
-          return [
+        const payload = c.message.params.arguments;
+        return {
+          content: [
             {
-              uri: "task1",
-              text: "This is a fixed task",
+              type: "text",
+              text: `Hello ${payload.name}!`,
             },
-          ];
+          ],
+        };
+      },
+    )
+    .prompt(
+      {
+        name: "simple-prompt",
+        arguments: {
+          name: { validation: v.string() },
+        },
+      },
+      (c) => {
+        const { name } = c.message.params.arguments;
 
-        return [
+        return {
+          messages: [
+            {
+              role: "user",
+              content: {
+                type: "text",
+                text: `This is a simple prompt for ${name}`,
+              },
+            },
+          ],
+        };
+      },
+    )
+    .resource(
+      {
+        uri: "https://lorem.ipsum",
+        name: "Todo list",
+        mimeType: "text/plain",
+      },
+      () => ({
+        contents: [
+          {
+            uri: "task1",
+            text: "This is a fixed task",
+          },
+        ],
+      }),
+    )
+    .resource(
+      {
+        uri: "https://lorem.{ending}",
+        name: "Todo list",
+        mimeType: "text/plain",
+      },
+      () => ({
+        contents: [
           {
             uri: "task1",
             text: "This is dynamic task",
@@ -103,35 +78,31 @@ describe("basic", async () => {
             uri: "task2",
             text: "Could be fetched from a DB",
           },
-        ];
-      },
-    },
-  });
-
-  it("should initialize", async () => {
-    const response = await instance?.request("/initialize", {
-      method: "POST",
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 0,
-        method: "initialize",
-        params: {
-          protocolVersion: "2024-11-05",
-          capabilities: { sampling: {}, roots: { listChanged: true } },
-          clientInfo: { name: "mcp-inspector", version: "0.7.0" },
-        },
+        ],
       }),
-      headers: {
-        "content-type": "application/json",
+    );
+
+  it.only("should initialize", async () => {
+    const message = {
+      method: "initialize",
+      params: {
+        protocolVersion: "2024-11-05",
+        capabilities: { sampling: {}, roots: { listChanged: true } },
+        clientInfo: { name: "mcp-inspector", version: "0.7.0" },
       },
-    });
+    } satisfies ClientRequest;
 
-    const json = await response?.json();
+    const context = new Context(message, { transport: {} });
 
-    expect(json).toBeDefined();
-    expect(json.result).toMatchObject({
+    const response = await mcp.dispatch(message, { context });
+
+    expect(response).toBeDefined();
+    expect(response).toMatchObject({
       protocolVersion: "2024-11-05",
-      serverInfo,
+      serverInfo: {
+        name: "My Muppet",
+        version: "1.0.0",
+      },
       capabilities: { tools: {}, prompts: {}, resources: {} },
     });
   });

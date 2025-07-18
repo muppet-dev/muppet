@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
-import { registerResources, muppet, type Resource } from "../index";
+import { describe, expect, it } from "vitest";
+import { muppet, type Resource, registerResources } from "../index";
 
 describe("resources", async () => {
   describe("only static resources", async () => {
