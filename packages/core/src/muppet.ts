@@ -30,6 +30,10 @@ import type {
   ResourceTemplate,
   ResourceTemplateOptions,
   RouterRoute,
+  SanitizedPromptOptions,
+  SanitizedResourceOptions,
+  SanitizedResourceTemplateOptions,
+  SanitizedSimpleResourceOptions,
   SanitizedToolOptions,
   ServerCapabilities,
   ServerResult,
@@ -235,9 +239,25 @@ export class Muppet<E extends Env = BlankEnv> {
     return this;
   }
 
-  enable(name: string) {}
+  enable(name: string) {
+    const entry = this.routes.find((route) => route.name === name);
 
-  disable(name: string) {}
+    if (entry && entry.type !== "middleware") {
+      entry.disabled = false;
+    }
+
+    return this;
+  }
+
+  disable(name: string) {
+    const entry = this.routes.find((route) => route.name === name);
+
+    if (entry && entry.type !== "middleware") {
+      entry.disabled = true;
+    }
+
+    return this;
+  }
 
   onNotification(
     method: ClientNotification["method"],
@@ -325,7 +345,13 @@ export class Muppet<E extends Env = BlankEnv> {
       }
 
       if (message.method === "tools/list") {
-        const tools = this.routes.filter((route) => route.type === "tool");
+        const tools: SanitizedToolOptions[] = [];
+
+        for (const route of this.routes) {
+          if (route.type === "tool" && route.disabled !== true) {
+            tools.push(route);
+          }
+        }
 
         return {
           tools: await Promise.all(
@@ -361,6 +387,15 @@ export class Muppet<E extends Env = BlankEnv> {
         for (const route of this.routes) {
           if (route.type === "tool" && route.name === name) {
             tool = route;
+
+            if (tool.disabled) {
+              options.context.error = {
+                code: ErrorCode.InvalidParams,
+                message: "Tool is disabled",
+              };
+
+              return;
+            }
           }
 
           if (
@@ -411,9 +446,13 @@ export class Muppet<E extends Env = BlankEnv> {
       }
 
       if (message.method === "prompts/list") {
-        const prompts: PromptOptions[] = this.routes.filter(
-          (route) => route.type === "prompt",
-        );
+        const prompts: SanitizedPromptOptions[] = [];
+
+        for (const route of this.routes) {
+          if (route.type === "prompt" && route.disabled !== true) {
+            prompts.push(route);
+          }
+        }
 
         return {
           prompts: await Promise.all(
@@ -444,12 +483,21 @@ export class Muppet<E extends Env = BlankEnv> {
       if (message.method === "prompts/get") {
         const name = message.params.name;
 
-        let prompt: PromptOptions | undefined;
+        let prompt: SanitizedPromptOptions | undefined;
         const middlewares: H<E>[] = [];
 
         for (const route of this.routes) {
           if (route.type === "prompt" && route.name === name) {
             prompt = route;
+
+            if (prompt.disabled) {
+              options.context.error = {
+                code: ErrorCode.InvalidParams,
+                message: "Prompt is disabled",
+              };
+
+              return;
+            }
           }
 
           if (
@@ -498,9 +546,13 @@ export class Muppet<E extends Env = BlankEnv> {
       }
 
       if (message.method === "resources/list") {
-        const resources: Resource[] = this.routes.filter(
-          (route) => route.type === "resource",
-        );
+        const resources: SanitizedSimpleResourceOptions[] = [];
+
+        for (const route of this.routes) {
+          if (route.type === "resource" && route.disabled !== true) {
+            resources.push(route);
+          }
+        }
 
         return {
           resources: resources.map((resource) => ({
@@ -515,9 +567,13 @@ export class Muppet<E extends Env = BlankEnv> {
       }
 
       if (message.method === "resources/templates/list") {
-        const resources: ResourceTemplate[] = this.routes.filter(
-          (route) => route.type === "resource-template",
-        );
+        const resources: SanitizedResourceTemplateOptions[] = [];
+
+        for (const route of this.routes) {
+          if (route.type === "resource-template" && route.disabled !== true) {
+            resources.push(route);
+          }
+        }
 
         return {
           resourceTemplates: resources.map((resource) => ({
@@ -541,6 +597,15 @@ export class Muppet<E extends Env = BlankEnv> {
         let variables: Record<string, unknown> = {};
 
         if (resource) {
+          if ("disabled" in resource && resource.disabled) {
+            options.context.error = {
+              code: ErrorCode.InvalidParams,
+              message: "Resource is disabled",
+            };
+
+            return;
+          }
+
           middlewares = this.routes.filter(
             (route) =>
               route.type === "middleware" &&
@@ -553,26 +618,26 @@ export class Muppet<E extends Env = BlankEnv> {
             if (route.type !== "resource-template") continue;
 
             // This checks if the uriTemplate is a match for the uri
-            // Eg - /users/:id matches /users/123
-            // Eg - /users/:id/details matches /users/123/details
+            // Eg - "users:{id}" matches "users:123"
+            // Eg - "users.{id}.details" matches "users.123.details"
             const uriTemplate = route.uriTemplate;
             const uri = message.params.uri;
 
-            const uriTemplateRegex = new RegExp(
-              uriTemplate.replace(/:(\w+)/g, "([^/]+)"),
-            );
-            const match = uri.match(uriTemplateRegex);
+            const match = extractVariables(uriTemplate, uri);
 
             if (match) {
               resourceTemplate = route;
-              // Arrange the match into a map of variable names to values
-              variables = Object.fromEntries(
-                match.slice(1).map((value) => {
-                  const key = uriTemplate.match(/:(\w+)/)?.[1];
 
-                  return [key, value];
-                }),
-              );
+              if ("disabled" in resourceTemplate && resourceTemplate.disabled) {
+                options.context.error = {
+                  code: ErrorCode.InvalidParams,
+                  message: "Resource is disabled",
+                };
+
+                return;
+              }
+
+              variables = { ...match };
 
               if (resourceTemplate.arguments) {
                 for (
@@ -770,4 +835,24 @@ export class Muppet<E extends Env = BlankEnv> {
 
     return transport.start();
   }
+}
+
+function uriTemplateToRegex(template: string): RegExp {
+  // Escape regex special characters except for curly braces
+  const escaped = template.replace(/([.+^=!:${}()|[\]/\\])/g, "\\$1");
+  // Replace {var} with a capture group
+  const pattern = "^" + escaped.replace(/\\{(\w+)\\}/g, "([^/]+)") + "$";
+  return new RegExp(pattern);
+}
+
+function extractVariables(
+  template: string,
+  uri: string,
+): Record<string, string> | null {
+  const varNames = Array.from(template.matchAll(/{(\w+)}/g)).map((m) => m[1]);
+  const regex = uriTemplateToRegex(template);
+  const match = uri.match(regex);
+  if (!match) return null;
+  const values = match.slice(1);
+  return Object.fromEntries(varNames.map((name, i) => [name, values[i]]));
 }

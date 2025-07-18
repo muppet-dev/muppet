@@ -46,6 +46,7 @@ export type ToolOptions<
 
 export type SanitizedToolOptions = ToolOptions & {
   type: "tool";
+  disabled?: boolean;
 };
 
 export type ToolHandler<
@@ -70,8 +71,8 @@ export type CompletionFn<
 ) => PromiseOr<
   | StandardSchemaV1.InferOutput<I[K]>[]
   | (Omit<CompleteResult["completion"], "values"> & {
-      values: StandardSchemaV1.InferOutput<I[K]>[];
-    })
+    values: StandardSchemaV1.InferOutput<I[K]>[];
+  })
 >;
 
 export type PromptArgumentWithCompletion<
@@ -94,6 +95,7 @@ export type PromptOptions<
 
 export type SanitizedPromptOptions = PromptOptions & {
   type: "prompt";
+  disabled?: boolean;
 };
 
 export type PromptHandler<
@@ -120,13 +122,19 @@ export type ResourceOptions<
   I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
 > = Resource | ResourceTemplateOptions<E, I>;
 
+export type SanitizedSimpleResourceOptions = {
+  type: "resource";
+  disabled?: boolean;
+} & Resource;
+
+export type SanitizedResourceTemplateOptions = {
+  type: "resource-template";
+  disabled?: boolean;
+} & ResourceTemplateOptions;
+
 export type SanitizedResourceOptions =
-  | ({
-      type: "resource";
-    } & Resource)
-  | ({
-      type: "resource-template";
-    } & ResourceTemplateOptions);
+  | SanitizedSimpleResourceOptions
+  | SanitizedResourceTemplateOptions;
 
 export type ResourceHandler<
   E extends Env,
@@ -321,17 +329,17 @@ export type Tool = BaseMetadata & {
   description?: string;
   inputSchema:
     | {
-        type: "object";
-        properties: Record<string, unknown>;
-        required?: string[];
-      }
+      type: "object";
+      properties: Record<string, unknown>;
+      required?: string[];
+    }
     | JSONSchema7;
   outputSchema?:
     | {
-        type: "object";
-        properties: Record<string, unknown>;
-        required?: string[];
-      }
+      type: "object";
+      properties: Record<string, unknown>;
+      required?: string[];
+    }
     | JSONSchema7;
   annotations?: ToolAnnotation;
 };
@@ -349,7 +357,8 @@ export type CallToolRequest<T extends StandardSchemaV1 = StandardSchemaV1> = {
 };
 
 export type CallToolResult<T extends StandardSchemaV1 = StandardSchemaV1> =
-  BaseResult & {
+  & BaseResult
+  & {
     content: ContentBlock[];
     structuredContent?:
       | StandardSchemaV1.InferOutput<T>
@@ -592,7 +601,8 @@ export type ElicitRequestOptions<
 };
 
 export type ElicitResult<I extends StandardSchemaV1 = StandardSchemaV1> =
-  BaseResult & {
+  & BaseResult
+  & {
     action: "accept" | "decline" | "cancel";
     content?: StandardSchemaV1.InferOutput<I>;
   };
