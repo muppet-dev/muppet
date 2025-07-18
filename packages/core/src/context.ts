@@ -63,7 +63,11 @@ export class Context<
       this.#var = new Map(Object.entries(options.env.Variables ?? {}));
     }
 
-    this.server = new ContextServer(message, options.transport);
+    this.server = new ContextServer(
+      // @ts-expect-error
+      message.id,
+      options.transport,
+    );
   }
 
   get result(): R | undefined {
@@ -109,23 +113,23 @@ type TimeoutInfo = {
 export class ContextServer {
   transport: Transport;
 
-  #message: ClientRequest;
-  #progressHandlers: Map<string, ProgressCallback> = new Map();
-  #timeoutInfo: Map<number, TimeoutInfo> = new Map();
+  #messageId: string | number;
+  #progressHandlers: Map<string | number, ProgressCallback> = new Map();
+  #timeoutInfo: Map<string | number, TimeoutInfo> = new Map();
   #responseHandlers: Map<
-    number,
+    string | number,
     <T extends ClientResult = ClientResult>(
       response: (JSONRPCRequest & { result: T }) | Error,
     ) => void
   > = new Map();
 
-  constructor(message: ClientRequest, transport: Transport) {
+  constructor(messageId: string | number, transport: Transport) {
     this.transport = transport;
-    this.#message = message;
+    this.#messageId = messageId;
   }
 
   #setupTimeout(
-    messageId: number,
+    messageId: string | number,
     timeout: number,
     maxTotalTimeout: number | undefined,
     onTimeout: () => void,
@@ -141,7 +145,7 @@ export class ContextServer {
     });
   }
 
-  #cleanupTimeout(messageId: number) {
+  #cleanupTimeout(messageId: string | number) {
     const info = this.#timeoutInfo.get(messageId);
     if (info) {
       clearTimeout(info.timeoutId);
@@ -193,9 +197,11 @@ export class ContextServer {
         if (validatedResponse.issues) {
           throw new McpError(
             ErrorCode.InvalidParams,
-            `Elicitation response content does not match requested schema: ${validatedResponse.issues
-              .map((issue) => issue.message)
-              .join(", ")}`,
+            `Elicitation response content does not match requested schema: ${
+              validatedResponse.issues
+                .map((issue) => issue.message)
+                .join(", ")
+            }`,
           );
         }
       } catch (error) {
@@ -254,8 +260,7 @@ export class ContextServer {
     return new Promise((resolve, reject) => {
       options?.signal?.throwIfAborted();
 
-      // @ts-expect-error
-      const messageId = this.#message.id;
+      const messageId = this.#messageId;
       const jsonrpcRequest: JSONRPCRequest & U = {
         ...request,
         jsonrpc: "2.0",
@@ -293,7 +298,7 @@ export class ContextServer {
           .catch((error) =>
             this.transport.onerror?.(
               new Error(`Failed to send cancellation: ${error}`),
-            ),
+            )
           );
 
         reject(reason);
