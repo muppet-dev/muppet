@@ -3,7 +3,7 @@ import { downloadTemplate } from "giget";
 
 export const TRANSPORT_LAYERS = {
   STREAMING: {
-    label: "The HTTP Streaming Transport from muppet",
+    label: "The HTTP Streaming Transport from @hono/mcp",
     value: "streaming",
     hint: "recommended",
   },
@@ -11,9 +11,9 @@ export const TRANSPORT_LAYERS = {
     label: "The Stdio Transport from @modelcontextprotocol/sdk",
     value: "stdio",
   },
-  CLASSIC_SSE: {
+  SSE: {
     label: "The SSE Transport from @modelcontextprotocol/sdk",
-    value: "classic-sse",
+    value: "sse",
   },
 };
 
@@ -26,10 +26,10 @@ export const RUNTIMES_BY_TRANSPORT_LAYER: Record<
   (string | Option<string>)[]
 > = {
   [TRANSPORT_LAYERS.STDIO.value]: ["bun", "nodejs", "deno"],
-  [TRANSPORT_LAYERS.CLASSIC_SSE.value]: [
+  [TRANSPORT_LAYERS.SSE.value]: [
     { label: "express.js x hono x nodejs", value: "nodejs" },
   ],
-  [TRANSPORT_LAYERS.STREAMING.value]: ["bun"],
+  [TRANSPORT_LAYERS.STREAMING.value]: ["bun", "cloudflare-workers"],
 };
 
 export const ALL_UNIQUE_TEMPLATES = Array.from(
@@ -52,9 +52,10 @@ const TEMPLATE_NAME_MAP: Record<string, string | undefined> = {
   "deno:stdio": "deno-stdio",
   "nodejs:stdio": "with-stdio",
   // Classic SSE Templates
-  "nodejs:classic-sse": "with-sse-express",
+  "nodejs:sse": "with-sse-express",
   // Hono Streaming Templates
   "bun:streaming": "with-streaming",
+  "cloudflare-workers:streaming": "with-streaming",
 };
 
 type DownloadOptions = {

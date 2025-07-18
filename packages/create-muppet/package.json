@@ -1,7 +1,7 @@
 {
   "name": "create-muppet",
   "description": "Create a Muppet application from starter templates.",
-  "version": "0.2.0-rc.0",
+  "version": "0.2.0",
   "license": "MIT",
   "bin": "./bin",
   "files": [
