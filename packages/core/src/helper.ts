@@ -1,4 +1,3 @@
-import { fileTypeFromBuffer } from "file-type";
 import type {
   AudioContent,
   BlobResourceContents,
@@ -45,14 +44,14 @@ export function resourceLink(
 
 export type ContentOptions =
   | {
-      url: string;
-    }
+    url: string;
+  }
   | {
-      buffer: Buffer;
-    }
+    buffer: Buffer;
+  }
   | {
-      path: string;
-    };
+    path: string;
+  };
 
 export async function imageContent(
   content: ContentOptions,
@@ -70,7 +69,7 @@ export async function imageContent(
     throw new Error("Invalid content options");
   }
 
-  const mimeType = await fileTypeFromBuffer(rawData);
+  const mimeType = await getMimeType(rawData);
 
   const base64Data = rawData.toString("base64");
 
@@ -98,7 +97,7 @@ export async function audioContent(
     throw new Error("Invalid content options");
   }
 
-  const mimeType = await fileTypeFromBuffer(rawData);
+  const mimeType = await getMimeType(rawData);
 
   const base64Data = rawData.toString("base64");
 
@@ -132,5 +131,15 @@ async function loadFromPath(path: string) {
     return readFile(path);
   } catch (error) {
     throw new Error("muppet: Unable to import 'fs' module.");
+  }
+}
+
+async function getMimeType(buffer: Buffer) {
+  try {
+    const { fileTypeFromBuffer } = await import("file-type");
+
+    return fileTypeFromBuffer(buffer);
+  } catch (error) {
+    throw new Error("muppet: Unable to import 'file-type' module.");
   }
 }
