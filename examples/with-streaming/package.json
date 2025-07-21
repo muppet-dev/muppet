@@ -1,5 +1,5 @@
 {
-  "name": "with-hono-mcp",
+  "name": "with-streaming",
   "version": "0.0.1",
   "bin": "./dist/index.js",
   "scripts": {
@@ -7,9 +7,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.15.0",
+    "fetch-to-node": "^2.1.0",
     "hono": "^4.7.4",
     "muppet": "workspace:*",
-    "@hono/mcp": "^0.1.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
