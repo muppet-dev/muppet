@@ -50,7 +50,7 @@ export type MuppetOptions = {
 export class Muppet<E extends Env = BlankEnv> {
   name?: string;
   version?: string;
-  prefix = "";
+  #prefix = "";
 
   #id!: string;
   routes: RouterRoute = [];
@@ -67,7 +67,7 @@ export class Muppet<E extends Env = BlankEnv> {
       this.version = options.version;
 
       if (options.prefix) {
-        this.prefix = options.prefix;
+        this.#prefix = options.prefix;
       }
     }
   }
@@ -100,19 +100,8 @@ export class Muppet<E extends Env = BlankEnv> {
     return this;
   };
 
-  merge(app: Muppet, prefix?: string) {
-    const _prefix = prefix ?? app.name;
-
-    let _routes = app.routes;
-
-    if (_prefix && _prefix.length > 0) {
-      _routes = _routes.map((route) => ({
-        ...route,
-        name: `${_prefix}${route.name}`,
-      }));
-    }
-
-    this.routes.push(..._routes);
+  merge(app: Muppet) {
+    this.routes.push(...app.routes);
     return this;
   }
 
@@ -127,11 +116,11 @@ export class Muppet<E extends Env = BlankEnv> {
     ...args: (ToolHandler<E, I, O> | ToolMiddlewareHandler<E, I, O>)[]
   ) {
     if (typeof args1 === "object" && !Array.isArray(args1)) {
-      this.#id = args1.name;
+      this.#id = `${this.#prefix}${args1.name}`;
       this.routes.push({
         type: "tool",
         ...args1,
-        name: `${this.prefix}${args1.name}`,
+        name: this.#id,
       });
     } else {
       this.routes.push({
@@ -167,13 +156,13 @@ export class Muppet<E extends Env = BlankEnv> {
     ...args: (PromptHandler<E, I> | PromptMiddlewareHandler<E, I>)[]
   ) {
     if (typeof args1 === "object" && !Array.isArray(args1)) {
-      this.#id = args1.name;
+      this.#id = `${this.#prefix}${args1.name}`;
       this.routes.push(
         // @ts-expect-error
         {
           type: "prompt",
           ...args1,
-          name: `${this.prefix}${args1.name}`,
+          name: this.#id,
         },
       );
     } else {
@@ -205,12 +194,12 @@ export class Muppet<E extends Env = BlankEnv> {
   >(
     args1:
       | ResourceOptions<E, I>
-      | ResourceHandler<E>
-      | ResourceMiddlewareHandler<E>,
-    ...args: (ResourceHandler<E> | ResourceMiddlewareHandler<E>)[]
+      | ResourceHandler<E, I>
+      | ResourceMiddlewareHandler<E, I>,
+    ...args: (ResourceHandler<E, I> | ResourceMiddlewareHandler<E, I>)[]
   ) {
     if (typeof args1 === "object" && !Array.isArray(args1)) {
-      this.#id = args1.name;
+      this.#id = `${this.#prefix}${args1.name}`;
       const type = "uriTemplate" in args1 ? "resource-template" : "resource";
 
       this.routes.push(
@@ -218,7 +207,7 @@ export class Muppet<E extends Env = BlankEnv> {
         {
           ...args1,
           type,
-          name: `${this.prefix}${args1.name}`
+          name: this.#id,
         },
       );
     } else {
@@ -234,6 +223,7 @@ export class Muppet<E extends Env = BlankEnv> {
       this.routes.push({
         type: "middleware",
         name: this.#id,
+        // @ts-expect-error
         handler,
       });
     }
