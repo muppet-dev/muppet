@@ -223,7 +223,7 @@ export type ImplementationSchema = BaseMetadata & {
   version: string;
 };
 
-export type InitializeRequestSchema = {
+export type InitializeRequest = {
   method: "initialize";
   params: BaseRequestParams & {
     protocolVersion: string;
@@ -328,19 +328,19 @@ export type ToolAnnotation = {
 export type Tool = BaseMetadata & {
   description?: string;
   inputSchema:
-    | {
-      type: "object";
-      properties: Record<string, unknown>;
-      required?: string[];
-    }
-    | JSONSchema7;
+  | {
+    type: "object";
+    properties: Record<string, unknown>;
+    required?: string[];
+  }
+  | JSONSchema7;
   outputSchema?:
-    | {
-      type: "object";
-      properties: Record<string, unknown>;
-      required?: string[];
-    }
-    | JSONSchema7;
+  | {
+    type: "object";
+    properties: Record<string, unknown>;
+    required?: string[];
+  }
+  | JSONSchema7;
   annotations?: ToolAnnotation;
 };
 
@@ -361,8 +361,8 @@ export type CallToolResult<T extends StandardSchemaV1 = StandardSchemaV1> =
   & {
     content: ContentBlock[];
     structuredContent?:
-      | StandardSchemaV1.InferOutput<T>
-      | Record<string, unknown>;
+    | StandardSchemaV1.InferOutput<T>
+    | Record<string, unknown>;
     isError?: boolean;
   };
 
@@ -537,9 +537,9 @@ export type CreateMessageResult = BaseResult & {
   stopReason: "endTurn" | "stopSequence" | "maxTokens" | string;
   role: "user" | "assistant";
   content:
-    | Omit<TextContent, "type">
-    | Omit<ImageContent, "type">
-    | Omit<AudioContent, "type">;
+  | Omit<TextContent, "type">
+  | Omit<ImageContent, "type">
+  | Omit<AudioContent, "type">;
 };
 
 // Elicitation
@@ -729,7 +729,7 @@ type RootsListChangedNotification = {
 
 export type ClientRequest =
   | PingRequest
-  | InitializeRequestSchema
+  | InitializeRequest
   | CompleteRequest
   | SetLevelRequest
   | GetPromptRequest
