@@ -81,9 +81,10 @@ export class Muppet<E extends Env = BlankEnv> {
 
   #errorHandler: ErrorHandler<E> = (err: Error, ctx) => {
     ctx.error = {
-      code: "code" in err && Number.isSafeInteger(err.code)
-        ? Number(err.code)
-        : ErrorCode.InternalError,
+      code:
+        "code" in err && Number.isSafeInteger(err.code)
+          ? Number(err.code)
+          : ErrorCode.InternalError,
       message: err.message ?? "Internal error",
       data: "data" in err ? err.data : undefined,
     };
@@ -126,10 +127,11 @@ export class Muppet<E extends Env = BlankEnv> {
     ...args: (ToolHandler<E, I, O> | ToolMiddlewareHandler<E, I, O>)[]
   ) {
     if (typeof args1 === "object" && !Array.isArray(args1)) {
-      this.#id = `${this.prefix}${args1.name}`;
+      this.#id = args1.name;
       this.routes.push({
         type: "tool",
         ...args1,
+        name: `${this.prefix}${args1.name}`,
       });
     } else {
       this.routes.push({
@@ -165,12 +167,13 @@ export class Muppet<E extends Env = BlankEnv> {
     ...args: (PromptHandler<E, I> | PromptMiddlewareHandler<E, I>)[]
   ) {
     if (typeof args1 === "object" && !Array.isArray(args1)) {
-      this.#id = `${this.prefix}${args1.name}`;
+      this.#id = args1.name;
       this.routes.push(
         // @ts-expect-error
         {
           type: "prompt",
           ...args1,
+          name: `${this.prefix}${args1.name}`,
         },
       );
     } else {
@@ -207,7 +210,7 @@ export class Muppet<E extends Env = BlankEnv> {
     ...args: (ResourceHandler<E> | ResourceMiddlewareHandler<E>)[]
   ) {
     if (typeof args1 === "object" && !Array.isArray(args1)) {
-      this.#id = `${this.prefix}${args1.name}`;
+      this.#id = args1.name;
       const type = "uriTemplate" in args1 ? "resource-template" : "resource";
 
       this.routes.push(
@@ -215,6 +218,7 @@ export class Muppet<E extends Env = BlankEnv> {
         {
           ...args1,
           type,
+          name: `${this.prefix}${args1.name}`
         },
       );
     } else {
@@ -589,7 +593,7 @@ export class Muppet<E extends Env = BlankEnv> {
             route.type === "resource" && route.uri === message.params.uri,
         );
 
-        let middlewares: MiddlewareOptions["handler"][] = [];
+        const middlewares: MiddlewareOptions["handler"][] = [];
         let variables: Record<string, unknown> = {};
 
         if (resource) {
@@ -639,11 +643,9 @@ export class Muppet<E extends Env = BlankEnv> {
               variables = { ...match };
 
               if (resourceTemplate.arguments) {
-                for (
-                  const [key, value] of Object.entries(
-                    resourceTemplate.arguments,
-                  )
-                ) {
+                for (const [key, value] of Object.entries(
+                  resourceTemplate.arguments,
+                )) {
                   const validationResponse = await value.validation[
                     "~standard"
                   ].validate(variables[key]);
@@ -723,9 +725,9 @@ export class Muppet<E extends Env = BlankEnv> {
           );
 
           if (promptOptions?.type === "prompt") {
-            completionFn = promptOptions.arguments
-              ?.[message.params.argument.name]
-              ?.completion;
+            completionFn =
+              promptOptions.arguments?.[message.params.argument.name]
+                ?.completion;
           }
         } else if (message.params.ref.type === "ref/resource") {
           const resourceURI = message.params.ref.uri;
@@ -737,17 +739,16 @@ export class Muppet<E extends Env = BlankEnv> {
           );
 
           if (resourceOptions?.type === "resource-template") {
-            completionFn = resourceOptions.arguments
-              ?.[message.params.argument.name]
-              ?.completion;
+            completionFn =
+              resourceOptions.arguments?.[message.params.argument.name]
+                ?.completion;
           }
         }
 
         if (!completionFn) {
           options.context.error = {
             code: ErrorCode.InvalidParams,
-            message:
-              `No completion function found for ${message.params.ref.type}`,
+            message: `No completion function found for ${message.params.ref.type}`,
           };
 
           return;
