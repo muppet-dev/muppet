@@ -1,43 +1,46 @@
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { toJsonSchema } from "@standard-community/standard-json";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
+import * as v from "valibot";
 import { Context } from "./context";
-import type {
-  BaseResult,
-  BlankEnv,
-  ClientNotification,
-  ClientRequest,
-  CompletionFn,
-  Env,
-  ErrorHandler,
-  H,
-  JSONRPCRequest,
-  ListPromptsResult,
-  ListResourcesResult,
-  ListResourceTemplatesResult,
-  ListToolsResult,
-  MCPError,
-  MiddlewareOptions,
-  NotFoundHandler,
-  Prompt,
-  PromptArgument,
-  PromptHandler,
-  PromptMiddlewareHandler,
-  PromptOptions,
-  ResourceHandler,
-  ResourceMiddlewareHandler,
-  ResourceOptions,
-  ResourceTemplateOptions,
-  RouterRoute,
-  SanitizedPromptOptions,
-  SanitizedResourceTemplateOptions,
-  SanitizedSimpleResourceOptions,
-  SanitizedToolOptions,
-  ServerCapabilities,
-  ServerResult,
-  ToolHandler,
-  ToolMiddlewareHandler,
-  ToolOptions,
+import {
+  type BaseResult,
+  type BlankEnv,
+  type ClientNotification,
+  ClientNotificationSchema,
+  type ClientRequest,
+  ClientRequestSchema,
+  type CompletionFn,
+  type Env,
+  type ErrorHandler,
+  type H,
+  type JSONRPCRequest,
+  type ListPromptsResult,
+  type ListResourcesResult,
+  type ListResourceTemplatesResult,
+  type ListToolsResult,
+  type MCPError,
+  type MiddlewareOptions,
+  type NotFoundHandler,
+  type Prompt,
+  type PromptArgument,
+  type PromptHandler,
+  type PromptMiddlewareHandler,
+  type PromptOptions,
+  type ResourceHandler,
+  type ResourceMiddlewareHandler,
+  type ResourceOptions,
+  type ResourceTemplateOptions,
+  type RouterRoute,
+  type SanitizedPromptOptions,
+  type SanitizedResourceTemplateOptions,
+  type SanitizedSimpleResourceOptions,
+  type SanitizedToolOptions,
+  type ServerCapabilities,
+  type ServerResult,
+  type ToolHandler,
+  type ToolMiddlewareHandler,
+  type ToolOptions,
 } from "./types";
 import { compose, ErrorCode } from "./utils";
 
@@ -58,7 +61,7 @@ export class Muppet<E extends Env = BlankEnv> {
 
   #notificationHanler: Map<
     ClientNotification["method"],
-    (message: ClientNotification) => void
+    (context: Context<E>) => void
   > = new Map();
 
   constructor(options?: Partial<MuppetOptions>) {
@@ -81,10 +84,9 @@ export class Muppet<E extends Env = BlankEnv> {
 
   #errorHandler: ErrorHandler<E> = (err: Error, ctx) => {
     ctx.error = {
-      code:
-        "code" in err && Number.isSafeInteger(err.code)
-          ? Number(err.code)
-          : ErrorCode.InternalError,
+      code: "code" in err && Number.isSafeInteger(err.code)
+        ? Number(err.code)
+        : ErrorCode.InternalError,
       message: err.message ?? "Internal error",
       data: "data" in err ? err.data : undefined,
     };
@@ -253,7 +255,7 @@ export class Muppet<E extends Env = BlankEnv> {
 
   onNotification(
     method: ClientNotification["method"],
-    handler: (message: ClientNotification) => void,
+    handler: (context: Context<E>) => void,
   ) {
     this.#notificationHanler.set(method, handler);
     return this;
@@ -261,7 +263,7 @@ export class Muppet<E extends Env = BlankEnv> {
 
   async dispatch(
     message: ClientRequest | ClientNotification,
-    options: { context: Context<E, ClientRequest, ServerResult> },
+    options: { context: Context<E> },
   ): Promise<ServerResult | void> {
     try {
       if (message.method === "initialize") {
@@ -326,7 +328,7 @@ export class Muppet<E extends Env = BlankEnv> {
         const handler = this.#notificationHanler.get(message.method);
 
         if (handler) {
-          handler(message);
+          handler(options.context);
         }
 
         return;
@@ -633,9 +635,11 @@ export class Muppet<E extends Env = BlankEnv> {
               variables = { ...match };
 
               if (resourceTemplate.arguments) {
-                for (const [key, value] of Object.entries(
-                  resourceTemplate.arguments,
-                )) {
+                for (
+                  const [key, value] of Object.entries(
+                    resourceTemplate.arguments,
+                  )
+                ) {
                   const validationResponse = await value.validation[
                     "~standard"
                   ].validate(variables[key]);
@@ -715,9 +719,9 @@ export class Muppet<E extends Env = BlankEnv> {
           );
 
           if (promptOptions?.type === "prompt") {
-            completionFn =
-              promptOptions.arguments?.[message.params.argument.name]
-                ?.completion;
+            completionFn = promptOptions.arguments
+              ?.[message.params.argument.name]
+              ?.completion;
           }
         } else if (message.params.ref.type === "ref/resource") {
           const resourceURI = message.params.ref.uri;
@@ -729,16 +733,17 @@ export class Muppet<E extends Env = BlankEnv> {
           );
 
           if (resourceOptions?.type === "resource-template") {
-            completionFn =
-              resourceOptions.arguments?.[message.params.argument.name]
-                ?.completion;
+            completionFn = resourceOptions.arguments
+              ?.[message.params.argument.name]
+              ?.completion;
           }
         }
 
         if (!completionFn) {
           options.context.error = {
             code: ErrorCode.InvalidParams,
-            message: `No completion function found for ${message.params.ref.type}`,
+            message:
+              `No completion function found for ${message.params.ref.type}`,
           };
 
           return;
@@ -784,32 +789,48 @@ export class Muppet<E extends Env = BlankEnv> {
       );
     }
 
-    const context = new Context(message, {
-      ...options,
-      transport: this.transport,
-    });
+    try {
+      const _message = v.parse(
+        v.union([ClientRequestSchema, ClientNotificationSchema]),
+        message,
+      );
 
-    const result = await this.dispatch(message, {
-      context,
-    });
+      const context = new Context(_message, {
+        ...options,
+        transport: this.transport,
+      });
 
-    if (context.error) {
+      const result = await this.dispatch(_message, {
+        context,
+      });
+
+      if (context.error) {
+        return {
+          id: message.id,
+          jsonrpc: "2.0",
+          error: context.error,
+        } as JSONRPCRequest & { error: MCPError };
+      }
+
+      if (!result) {
+        return;
+      }
+
       return {
         id: message.id,
         jsonrpc: "2.0",
-        error: context.error,
+        result,
+      } as JSONRPCRequest & { result: ServerResult };
+    } catch (err) {
+      return {
+        id: message.id,
+        jsonrpc: "2.0",
+        error: {
+          code: ErrorCode.InvalidRequest,
+          message: "Invalid request",
+        },
       } as JSONRPCRequest & { error: MCPError };
     }
-
-    if (!result) {
-      return;
-    }
-
-    return {
-      id: message.id,
-      jsonrpc: "2.0",
-      result,
-    } as JSONRPCRequest & { result: ServerResult };
   }
 
   async connect(transport: Transport, options?: { env?: E }) {
@@ -834,7 +855,7 @@ function uriTemplateToRegex(template: string): RegExp {
   // Escape regex special characters except for curly braces
   const escaped = template.replace(/([.+^=!:${}()|[\]/\\])/g, "\\$1");
   // Replace {var} with a capture group
-  const pattern = "^" + escaped.replace(/\\{(\w+)\\}/g, "([^/]+)") + "$";
+  const pattern = `^${escaped.replace(/\\{(\w+)\\}/g, "([^/]+)")}$`;
   return new RegExp(pattern);
 }
 

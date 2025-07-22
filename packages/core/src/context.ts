@@ -3,6 +3,7 @@ import { toJsonSchema } from "@standard-community/standard-json";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type {
   BaseResult,
+  ClientNotification,
   ClientRequest,
   ClientResult,
   CreateMessageRequest,
@@ -46,7 +47,9 @@ type Set<E extends Env> = <Key extends keyof E["Variables"]>(
 
 export class Context<
   E extends Env,
-  M extends ClientRequest = ClientRequest,
+  M extends ClientRequest | ClientNotification =
+    | ClientRequest
+    | ClientNotification,
   R extends ServerResult = ServerResult,
 > {
   #var: Map<unknown, unknown> | undefined;

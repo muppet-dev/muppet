@@ -1,5 +1,6 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { JSONSchema7 } from "json-schema";
+import * as v from "valibot";
 import type { Context } from "./context";
 
 export type PromiseOr<T> = T | Promise<T>;
@@ -169,22 +170,39 @@ export type RouterRoute = (
 
 // MCP Type Utils
 
-export type BaseRequestParams = {
-  _meta?: Record<string, unknown>;
-};
+export const BaseRequestParamsSchema = v.object({
+  _meta: v.optional(v.record(v.string(), v.unknown())),
+});
 
-export type BaseResult = {
-  _meta?: Record<string, unknown>;
-};
+export type BaseRequestParams = v.InferOutput<typeof BaseRequestParamsSchema>;
 
-export type BasePaginatedResult = BaseResult & {
-  nextCursor?: string;
-};
+export const BaseResultSchema = v.object({
+  _meta: v.optional(v.record(v.string(), v.unknown())),
+});
 
-export type BaseMetadata = {
-  name: string;
-  title?: string;
-};
+export type BaseResult = v.InferOutput<typeof BaseResultSchema>;
+
+export const BasePaginatedResultSchema = v.intersect([
+  BaseResultSchema,
+  v.object({
+    nextCursor: v.optional(v.string()),
+  }),
+]);
+
+export type BasePaginatedResult = v.InferOutput<
+  typeof BasePaginatedResultSchema
+>;
+
+const BasePaginatedRequestSchema = v.object({
+  cursor: v.optional(v.string()),
+});
+
+export const BaseMetadataSchema = v.object({
+  name: v.string(),
+  title: v.optional(v.string()),
+});
+
+export type BaseMetadata = v.InferOutput<typeof BaseMetadataSchema>;
 
 export type Progress = {
   progress: number;
@@ -212,25 +230,39 @@ export type MCPError = {
 
 // Initialize
 
-export type ClientCapabilitiesSchema = {
-  experimental?: Record<string, unknown>;
-  sampling?: Record<string, unknown>;
-  elicitation?: Record<string, unknown>;
-  roots?: { listChanged?: boolean };
-};
+export const ClientCapabilitiesSchema = v.object({
+  experimental: v.optional(v.record(v.string(), v.unknown())),
+  sampling: v.optional(v.record(v.string(), v.unknown())),
+  elicitation: v.optional(v.record(v.string(), v.unknown())),
+  roots: v.optional(v.object({
+    listChanged: v.optional(v.boolean()),
+  })),
+});
 
-export type ImplementationSchema = BaseMetadata & {
-  version: string;
-};
+export type ClientCapabilities = v.InferOutput<typeof ClientCapabilitiesSchema>;
 
-export type InitializeRequest = {
-  method: "initialize";
-  params: BaseRequestParams & {
-    protocolVersion: string;
-    capabilities: ClientCapabilitiesSchema;
-    clientInfo: ImplementationSchema;
-  };
-};
+export const ImplementationSchema = v.intersect([
+  BaseMetadataSchema,
+  v.object({
+    version: v.string(),
+  }),
+]);
+
+export type Implementation = v.InferOutput<typeof ImplementationSchema>;
+
+export const InitializeRequestSchema = v.object({
+  method: v.literal("initialize"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    v.object({
+      protocolVersion: v.string(),
+      capabilities: ClientCapabilitiesSchema,
+      clientInfo: ImplementationSchema,
+    }),
+  ]),
+});
+
+export type InitializeRequest = v.InferOutput<typeof InitializeRequestSchema>;
 
 export type ServerCapabilities = {
   experimental?: Record<string, unknown>;
@@ -251,7 +283,7 @@ export type ServerCapabilities = {
 export type InitializeResult = {
   protocolVersion: string;
   capabilities: ServerCapabilities;
-  serverInfo: ImplementationSchema;
+  serverInfo: Implementation;
   instructions?: string;
 };
 
@@ -310,12 +342,15 @@ export type ContentBlock =
 
 // Tools
 
-export type ListToolsRequest = {
-  method: "tools/list";
-  params: BaseRequestParams & {
-    cursor?: string;
-  };
-};
+const ListToolsRequestSchema = v.object({
+  method: v.literal("tools/list"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    BasePaginatedRequestSchema,
+  ]),
+});
+
+export type ListToolsRequest = v.InferOutput<typeof ListToolsRequestSchema>;
 
 export type ToolAnnotation = {
   title?: string;
@@ -328,25 +363,36 @@ export type ToolAnnotation = {
 export type Tool = BaseMetadata & {
   description?: string;
   inputSchema:
-  | {
-    type: "object";
-    properties: Record<string, unknown>;
-    required?: string[];
-  }
-  | JSONSchema7;
+    | {
+      type: "object";
+      properties: Record<string, unknown>;
+      required?: string[];
+    }
+    | JSONSchema7;
   outputSchema?:
-  | {
-    type: "object";
-    properties: Record<string, unknown>;
-    required?: string[];
-  }
-  | JSONSchema7;
+    | {
+      type: "object";
+      properties: Record<string, unknown>;
+      required?: string[];
+    }
+    | JSONSchema7;
   annotations?: ToolAnnotation;
 };
 
 export type ListToolsResult = BasePaginatedResult & {
   tools: Tool[];
 };
+
+const CallToolRequestSchema = v.object({
+  method: v.literal("tools/call"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    v.object({
+      name: v.string(),
+      arguments: v.record(v.string(), v.unknown()),
+    }),
+  ]),
+});
 
 export type CallToolRequest<T extends StandardSchemaV1 = StandardSchemaV1> = {
   method: "tools/call";
@@ -361,35 +407,64 @@ export type CallToolResult<T extends StandardSchemaV1 = StandardSchemaV1> =
   & {
     content: ContentBlock[];
     structuredContent?:
-    | StandardSchemaV1.InferOutput<T>
-    | Record<string, unknown>;
+      | StandardSchemaV1.InferOutput<T>
+      | Record<string, unknown>;
     isError?: boolean;
   };
 
 // Prompts
 
-export type PromptArgument = {
-  name: string;
-  description?: string;
-  required?: boolean;
-};
+const PromptArgumentSchema = v.object({
+  name: v.string(),
+  description: v.optional(v.string()),
+  required: v.optional(v.boolean()),
+});
 
-export type Prompt = BaseMetadata & {
-  description?: string;
-  arguments?: PromptArgument[];
-  _meta?: Record<string, unknown>;
-};
+export type PromptArgument = v.InferOutput<typeof PromptArgumentSchema>;
 
-export type ListPromptsRequest = {
-  method: "prompts/list";
-  params: BaseRequestParams & {
-    cursor?: string;
-  };
-};
+const PromptSchema = v.intersect([
+  BaseMetadataSchema,
+  v.object({
+    description: v.optional(v.string()),
+    arguments: v.optional(v.array(PromptArgumentSchema)),
+    _meta: v.optional(v.record(v.string(), v.unknown())),
+  }),
+]);
 
-export type ListPromptsResult = BasePaginatedResult & {
-  prompts: Prompt[];
-};
+export type Prompt = v.InferOutput<typeof PromptSchema>;
+
+const ListPromptsRequestSchema = v.object({
+  method: v.literal("prompts/list"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    BasePaginatedRequestSchema,
+  ]),
+});
+
+export type ListPromptsRequest = v.InferOutput<typeof ListPromptsRequestSchema>;
+
+export const ListPromptsResultSchema = v.intersect([
+  BasePaginatedResultSchema,
+  v.object({
+    prompts: v.array(PromptSchema),
+  }),
+]);
+
+export type ListPromptsResult = v.InferOutput<typeof ListPromptsResultSchema>;
+
+const GetPromptRequestSchema = v.object({
+  method: v.literal("prompts/get"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    v.object({
+      name: v.string(),
+      arguments: v.record(
+        v.string(),
+        v.unknown(),
+      ),
+    }),
+  ]),
+});
 
 export type GetPromptRequest<
   I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
@@ -415,12 +490,17 @@ export type GetPromptResult = BaseResult & {
 
 // Resources
 
-export type ListResourcesRequest = {
-  method: "resources/list";
-  params: BaseRequestParams & {
-    cursor?: string;
-  };
-};
+const ListResourcesRequestSchema = v.object({
+  method: v.literal("resources/list"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    BasePaginatedRequestSchema,
+  ]),
+});
+
+export type ListResourcesRequest = v.InferOutput<
+  typeof ListResourcesRequestSchema
+>;
 
 export type Resource = BaseMetadata & {
   uri: string;
@@ -433,12 +513,17 @@ export type ListResourcesResult = BasePaginatedResult & {
   resources: Resource[];
 };
 
-export type ListResourceTemplatesRequest = {
-  method: "resources/templates/list";
-  params: BaseRequestParams & {
-    cursor?: string;
-  };
-};
+const ListResourceTemplatesRequestSchema = v.object({
+  method: v.literal("resources/templates/list"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    BasePaginatedRequestSchema,
+  ]),
+});
+
+export type ListResourceTemplatesRequest = v.InferOutput<
+  typeof ListResourceTemplatesRequestSchema
+>;
 
 export type ResourceTemplate = BaseMetadata & {
   uriTemplate: string;
@@ -450,6 +535,22 @@ export type ResourceTemplate = BaseMetadata & {
 export type ListResourceTemplatesResult = BasePaginatedResult & {
   resourceTemplates: ResourceTemplate[];
 };
+
+const ReadResourceRequestSchema = v.object({
+  method: v.literal("resources/read"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    v.object({
+      uri: v.string(),
+      arguments: v.optional(
+        v.record(
+          v.string(),
+          v.unknown(),
+        ),
+      ),
+    }),
+  ]),
+});
 
 export type ReadResourceRequest<
   I extends Record<string, StandardSchemaV1> = Record<string, StandardSchemaV1>,
@@ -467,38 +568,56 @@ export type ReadResourceResult = BaseResult & {
   contents: (TextResourceContents | BlobResourceContents)[];
 };
 
-export type SubscribeRequest = {
-  method: "resources/subscribe";
-  params: BaseRequestParams & {
-    uri: string;
-  };
-};
+const SubscribeRequestSchema = v.object({
+  method: v.literal("resources/subscribe"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    v.object({
+      uri: v.string(),
+    }),
+  ]),
+});
 
-export type UnsubscribeRequest = {
-  method: "resources/unsubscribe";
-  params: BaseRequestParams & {
-    uri: string;
-  };
-};
+export type SubscribeRequest = v.InferOutput<typeof SubscribeRequestSchema>;
+
+const UnsubscribeRequestSchema = v.object({
+  method: v.literal("resources/unsubscribe"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    v.object({
+      uri: v.string(),
+    }),
+  ]),
+});
+
+export type UnsubscribeRequest = v.InferOutput<typeof UnsubscribeRequestSchema>;
 
 // Logging
 
-type LoggingLevel =
-  | "debug"
-  | "info"
-  | "notice"
-  | "warning"
-  | "error"
-  | "critical"
-  | "alert"
-  | "emergency";
+const LoggingLevelSchema = v.union([
+  v.literal("debug"),
+  v.literal("info"),
+  v.literal("notice"),
+  v.literal("warning"),
+  v.literal("error"),
+  v.literal("critical"),
+  v.literal("alert"),
+  v.literal("emergency"),
+]);
 
-type SetLevelRequest = {
-  method: "logging/setLevel";
-  params: BaseRequestParams & {
-    level: LoggingLevel;
-  };
-};
+type LoggingLevel = v.InferOutput<typeof LoggingLevelSchema>;
+
+const SetLevelRequestSchema = v.object({
+  method: v.literal("logging/setLevel"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    v.object({
+      level: LoggingLevelSchema,
+    }),
+  ]),
+});
+
+type SetLevelRequest = v.InferOutput<typeof SetLevelRequestSchema>;
 
 // Sampling
 
@@ -537,9 +656,9 @@ export type CreateMessageResult = BaseResult & {
   stopReason: "endTurn" | "stopSequence" | "maxTokens" | string;
   role: "user" | "assistant";
   content:
-  | Omit<TextContent, "type">
-  | Omit<ImageContent, "type">
-  | Omit<AudioContent, "type">;
+    | Omit<TextContent, "type">
+    | Omit<ImageContent, "type">
+    | Omit<AudioContent, "type">;
 };
 
 // Elicitation
@@ -609,29 +728,36 @@ export type ElicitResult<I extends StandardSchemaV1 = StandardSchemaV1> =
 
 // Autocomplete
 
-type ResourceTemplateReference = {
-  type: "ref/resource";
-  uri: string;
-};
+const ResourceTemplateReferenceSchema = v.object({
+  type: v.literal("ref/resource"),
+  uri: v.string(),
+});
 
-type PromptReference = {
-  type: "ref/prompt";
-  name: string;
-};
+const PromptReferenceSchema = v.object({
+  type: v.literal("ref/prompt"),
+  name: v.string(),
+});
 
-export type CompleteRequest = {
-  method: "completion/complete";
-  params: BaseRequestParams & {
-    ref: ResourceTemplateReference | PromptReference;
-    argument: {
-      name: string;
-      value: string;
-    };
-    context?: {
-      arguments?: Record<string, string>;
-    };
-  };
-};
+export const CompleteRequestSchema = v.object({
+  method: v.literal("completion/complete"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    v.object({
+      ref: v.union([ResourceTemplateReferenceSchema, PromptReferenceSchema]),
+      argument: v.object({
+        name: v.string(),
+        value: v.string(),
+      }),
+      context: v.optional(
+        v.object({
+          arguments: v.optional(v.record(v.string(), v.string())),
+        }),
+      ),
+    }),
+  ]),
+});
+
+export type CompleteRequest = v.InferOutput<typeof CompleteRequestSchema>;
 
 export type CompleteResult = BaseResult & {
   completion: {
@@ -660,34 +786,46 @@ export type ListRootsResult = BaseResult & {
 
 // Ping
 
-export type PingRequest = {
-  method: "ping";
-};
+export const PingRequestSchema = v.object({
+  method: v.literal("ping"),
+});
+
+export type PingRequest = v.InferOutput<typeof PingRequestSchema>;
 
 // Notifications
 
-type InitializedNotification = {
-  method: "notifications/initialized";
-  params?: BaseRequestParams;
-};
+const InitializeNotificationSchema = v.object({
+  method: v.literal("notifications/initialized"),
+  params: v.optional(BaseRequestParamsSchema),
+});
 
-type CancelledNotification = {
-  method: "notifications/cancelled";
-  params: BaseRequestParams & {
-    requestId: string | number;
-    reason?: string;
-  };
-};
+const CancelledNotificationSchema = v.object({
+  method: v.literal("notifications/cancelled"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    v.object({
+      requestId: v.union([v.string(), v.number()]),
+      reason: v.optional(v.string()),
+    }),
+  ]),
+});
 
-type ProgressNotification = {
-  method: "notifications/progress";
-  params: BaseRequestParams & {
-    progress: number;
-    total?: number;
-    message?: string;
-    progressToken: string | number;
-  };
-};
+type CancelledNotification = v.InferOutput<typeof CancelledNotificationSchema>;
+
+const ProgressNotificationSchema = v.object({
+  method: v.literal("notifications/progress"),
+  params: v.intersect([
+    BaseRequestParamsSchema,
+    v.object({
+      progress: v.number(),
+      total: v.optional(v.number()),
+      message: v.optional(v.string()),
+      progressToken: v.union([v.string(), v.number()]),
+    }),
+  ]),
+});
+
+type ProgressNotification = v.InferOutput<typeof ProgressNotificationSchema>;
 
 type ResourceListChangedNotification = {
   method: "notifications/resources/list_changed";
@@ -720,12 +858,28 @@ export type LoggingMessageNotification = {
   };
 };
 
-type RootsListChangedNotification = {
-  method: "notifications/roots/list_changed";
-  params?: BaseRequestParams;
-};
+const RootsListChangedNotificationSchema = v.object({
+  method: v.literal("notifications/roots/list_changed"),
+  params: v.optional(BaseRequestParamsSchema),
+});
 
 // Client
+
+export const ClientRequestSchema = v.union([
+  PingRequestSchema,
+  InitializeRequestSchema,
+  CompleteRequestSchema,
+  SetLevelRequestSchema,
+  GetPromptRequestSchema,
+  ListPromptsRequestSchema,
+  ListResourcesRequestSchema,
+  ListResourceTemplatesRequestSchema,
+  ReadResourceRequestSchema,
+  SubscribeRequestSchema,
+  UnsubscribeRequestSchema,
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+]);
 
 export type ClientRequest =
   | PingRequest
@@ -742,11 +896,14 @@ export type ClientRequest =
   | CallToolRequest
   | ListToolsRequest;
 
-export type ClientNotification =
-  | CancelledNotification
-  | ProgressNotification
-  | InitializedNotification
-  | RootsListChangedNotification;
+export const ClientNotificationSchema = v.union([
+  InitializeNotificationSchema,
+  CancelledNotificationSchema,
+  ProgressNotificationSchema,
+  RootsListChangedNotificationSchema,
+]);
+
+export type ClientNotification = v.InferOutput<typeof ClientNotificationSchema>;
 
 export type ClientResult =
   | BaseResult
